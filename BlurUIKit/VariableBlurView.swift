@@ -13,22 +13,48 @@ import UIKit
 /// without any hard border lines.
 public class VariableBlurView: UIVisualEffectView {
 
+    /// The possible directions that the gradient of this blur view may flow in.
+    public enum Direction {
+        case down   // Downwards. Useful for the iOS status bar
+        case up     // Upwards. Useful for view controller toolbars
+        case left   // Left. Useful for iPadOS sidebar
+        case right  // Right. iPadOS sidebar in right-to-left locales
+    }
+
+    /// Dentoting the end position of the opaque side of the gradient.
+    /// Use this to move the end position forward, tightening the gradient.
+    public enum StartInset {
+        // A flat inset in points that will remain the same, regardless of the size of the view.
+        case absolute(position: CGFloat)
+        // A relative position (between 0.0 and 1.0) that scales with the length of the gradient.
+        case relative(fraction: CGFloat)
+    }
+
+    // The current direction of the gradient for this blur view
+    public var direction: Direction = .down {
+        didSet { setNeedsUpdate() }
+    }
+
+    // An optional amount of insetting on the starting edge's side, to tight the gradient if desired
+    public var startInset: StartInset? {
+        didSet { setNeedsUpdate() }
+    }
+
     // The maximum blur radius of the blur view when its gradient is at full opacity
     public var maximumBlurRadius = 2.0 {
-        didSet { updateBlurFilter() }
+        didSet { setNeedsUpdate() }
     }
 
     // Performs an update when the frame changes
     public override var frame: CGRect {
-        didSet {
-            if frame.size != oldValue.size {
-                updateBlurFilter()
-            }
-        }
+        didSet { setNeedsUpdate() }
     }
 
     // The variable blur view filter
     private let variableBlurFilter = BlurFilterProvider.blurFilter(named: "variableBlur")
+
+    // Track when the blur view needs to be updated
+    private var needsUpdate = false
 
     // MARK: - Initialization
 
@@ -58,6 +84,13 @@ public class VariableBlurView: UIVisualEffectView {
         super.didMoveToSuperview()
         configureView()
         updateBlurFilter()
+    }
+
+    public override func layoutSubviews() {
+        super.layoutSubviews()
+        guard needsUpdate else { return }
+        updateBlurFilter()
+        needsUpdate = false
     }
 
     public override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
@@ -91,14 +124,60 @@ public class VariableBlurView: UIVisualEffectView {
 
     // Generates a gradient bitmap to be used with the blur filter
     private func gradientMaskImage() -> CGImage? {
-        let size = CGSize(width: 1, height: 5)
+        // Skip if we're not sized yet.
+        guard frame.size != .zero else { return nil }
+
+        // Generate the size, based on the current direction
+        let size: CGSize = {
+            switch direction {
+            case .up, .down:
+                return CGSize(width: 1.0, height: bounds.height)
+            case .left, .right:
+                return CGSize(width: bounds.width, height: 1.0)
+            }
+        }()
+
+        // Determine the start location if a setting was provided
+        let startLocation: CGFloat = {
+            guard let startInset else { return 0.0 }
+            switch startInset {
+                case .absolute(let position):
+                return position / (size.width < size.height ? size.height : size.width)
+                case .relative(let fraction):
+                return fraction
+            }
+        }()
+
+        // Determine which direction the gradient flows in
+        let gradientPosition: (start: CGPoint, end: CGPoint) = {
+            switch direction {
+            case .down:
+                return (start: CGPoint(x: 0.5, y: 0.0), end: CGPoint(x: 0.5, y: bounds.height))
+            case .up:
+                return (start: CGPoint(x: 0.5, y: bounds.height), end: CGPoint(x: 0.5, y: 0.0))
+            case .left:
+                return (start: CGPoint(x: 0.0, y: 0.5), end: CGPoint(x: bounds.width, y: 0.5))
+            case .right:
+                return (start: CGPoint(x: bounds.width, y: 0.5), end: CGPoint(x: 0.0, y: 0.5))
+            }
+        }()
+
+        // Render the gradient
         let graphicsRenderer = UIGraphicsImageRenderer(size: size)
         let image = graphicsRenderer.image { context in
-            let gradientColor = UIColor(red: 0.000, green: 0.000, blue: 0.000, alpha: 1.00)
-            let gradientColor2 = UIColor(red: 0.000, green: 0.000, blue: 0.000, alpha: 0.000)
-            let gradient = CGGradient(colorsSpace: nil, colors: [gradientColor.cgColor, gradientColor2.cgColor] as CFArray, locations: [0, 1])!
-            context.cgContext.drawLinearGradient(gradient, start: CGPoint(x: 0.5, y: 00), end: CGPoint(x: 0.5, y: 5), options: [])
+            let startColor = UIColor(white: 0.0, alpha: 1.0), endColor = UIColor(white: 0.0, alpha: 0.0)
+            let colors = [startColor.cgColor, endColor.cgColor] as CFArray
+            if let gradient = CGGradient(colorsSpace: nil, colors: colors, locations: [startLocation, 1.0]) {
+                context.cgContext.drawLinearGradient(gradient, start: gradientPosition.start, end: gradientPosition.end, options: [])
+            }
         }
         return image.cgImage
+    }
+
+    // Sets that the blur view needs to be updated in the next layout pass
+    // This allows a variety of settings to be set in one run loop, with them all being applied next loop
+    private func setNeedsUpdate() {
+        needsUpdate = true
+        setNeedsLayout()
     }
 }
