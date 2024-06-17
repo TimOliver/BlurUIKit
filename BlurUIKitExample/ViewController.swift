@@ -26,8 +26,6 @@ class ViewController: UIViewController {
         // Clamp the status bar blur view to the top safe area
         statusBarBlurView.frame = view.bounds
         statusBarBlurView.frame.size.height = view.safeAreaInsets.top
-
-        statusBarBlurView.startInset = .relative(fraction: 0.9)
     }
 }
 

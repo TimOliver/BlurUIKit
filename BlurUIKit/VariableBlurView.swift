@@ -111,7 +111,7 @@ public class VariableBlurView: UIVisualEffectView {
         // Find the backdrop view (The one that repeats the content drawn behind it) and apply the blur filter.
         if let backdropView = BlurFilterProvider.findSubview(in: self, containing: "backdrop") {
             backdropView.layer.filters = [variableBlurFilter]
-            backdropView.layer.setValue(0.5, forKey: "scale")
+            backdropView.layer.setValue(0.75, forKey: "scale")
         }
     }
 
@@ -162,14 +162,19 @@ public class VariableBlurView: UIVisualEffectView {
             }
         }()
 
+        // Configure one color to be opaque and one to be clear
+        let startColor = UIColor(white: 0.0, alpha: 1.0), endColor = UIColor(white: 0.0, alpha: 0.0)
+        let colors = [startColor.cgColor, endColor.cgColor] as CFArray
+
+        // Disable retina scaling since it won't be noticable, and saves memory
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1.0
+
         // Render the gradient
-        let graphicsRenderer = UIGraphicsImageRenderer(size: size)
+        let graphicsRenderer = UIGraphicsImageRenderer(size: size, format: format)
         let image = graphicsRenderer.image { context in
-            let startColor = UIColor(white: 0.0, alpha: 1.0), endColor = UIColor(white: 0.0, alpha: 0.0)
-            let colors = [startColor.cgColor, endColor.cgColor] as CFArray
-            if let gradient = CGGradient(colorsSpace: nil, colors: colors, locations: [startLocation, 1.0]) {
-                context.cgContext.drawLinearGradient(gradient, start: gradientPosition.start, end: gradientPosition.end, options: [])
-            }
+            guard let gradient = CGGradient(colorsSpace: nil, colors: colors, locations: [startLocation, 1.0]) else { return }
+            context.cgContext.drawLinearGradient(gradient, start: gradientPosition.start, end: gradientPosition.end, options: [])
         }
         return image.cgImage
     }
