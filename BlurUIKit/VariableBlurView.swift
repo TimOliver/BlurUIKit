@@ -21,9 +21,9 @@ public class VariableBlurView: UIVisualEffectView {
         case right  // Right. iPadOS sidebar in right-to-left locales
     }
 
-    /// Dentoting the end position of the opaque side of the gradient.
-    /// Use this to move the end position forward, tightening the gradient.
-    public enum StartInset {
+    /// Tightens the gradient by allowing the fully opaque starting position
+    /// to be inset from the edge of the view.
+    public enum GradientStartInset {
         // A flat inset in points that will remain the same, regardless of the size of the view.
         case absolute(position: CGFloat)
         // A relative position (between 0.0 and 1.0) that scales with the length of the gradient.
@@ -36,7 +36,7 @@ public class VariableBlurView: UIVisualEffectView {
     }
 
     // An optional amount of insetting on the starting edge's side, to tight the gradient if desired
-    public var startInset: StartInset? {
+    public var gradientStartInset: GradientStartInset? {
         didSet { setNeedsUpdate() }
     }
 
@@ -139,8 +139,8 @@ public class VariableBlurView: UIVisualEffectView {
 
         // Determine the start location if a setting was provided
         let startLocation: CGFloat = {
-            guard let startInset else { return 0.0 }
-            switch startInset {
+            guard let gradientStartInset else { return 0.0 }
+            switch gradientStartInset {
                 case .absolute(let position):
                 return position / (size.width < size.height ? size.height : size.width)
                 case .relative(let fraction):
