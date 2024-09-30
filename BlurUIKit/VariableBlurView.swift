@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import CoreImage
 
 /// A variant of UIVisualEffectView that provides a blur overlay view
 /// that gradually 'ramps' up in blur intensity from one edge to the other.
@@ -21,12 +22,11 @@ public class VariableBlurView: UIVisualEffectView {
         case right  // Right. iPadOS sidebar in right-to-left locales
     }
 
-    /// Tightens the gradient by allowing the fully opaque starting position
-    /// to be inset from the edge of the view.
-    public enum GradientStartInset {
-        // A flat inset in points that will remain the same, regardless of the size of the view.
+    /// Tightens the blur transition by insetting the gradient image inside the blur view by a certain amount.
+    public enum GradientStartingInset {
+        // The amount of points, starting from the clear edge, insetted into the blur view before the gradient completes.
         case absolute(position: CGFloat)
-        // A relative position (between 0.0 and 1.0) that scales with the length of the gradient.
+        // A value between 0.0 and 1.0 the gradient relative to the size of the view. A value of 0.5 would shrink the gradient to half the size.
         case relative(fraction: CGFloat)
     }
 
@@ -36,12 +36,12 @@ public class VariableBlurView: UIVisualEffectView {
     }
 
     // An optional amount of insetting on the starting edge's side, to tight the gradient if desired
-    public var gradientStartInset: GradientStartInset? {
+    public var gradientStartingInset: GradientStartingInset? = .relative(fraction: 0.5) {
         didSet { setNeedsUpdate() }
     }
 
     // The maximum blur radius of the blur view when its gradient is at full opacity
-    public var maximumBlurRadius = 2.0 {
+    public var maximumBlurRadius = 1.5 {
         didSet { setNeedsUpdate() }
     }
 
@@ -139,8 +139,8 @@ public class VariableBlurView: UIVisualEffectView {
 
         // Determine the start location if a setting was provided
         let startLocation: CGFloat = {
-            guard let gradientStartInset else { return 0.0 }
-            switch gradientStartInset {
+            guard let gradientStartingInset else { return 0.0 }
+            switch gradientStartingInset {
                 case .absolute(let position):
                 return position / (size.width < size.height ? size.height : size.width)
                 case .relative(let fraction):
@@ -149,34 +149,36 @@ public class VariableBlurView: UIVisualEffectView {
         }()
 
         // Determine which direction the gradient flows in
-        let gradientPosition: (start: CGPoint, end: CGPoint) = {
+        // (Core Image has its origin at the bottom of the bounds)
+        let gradientPosition: (start: CIVector, end: CIVector) = {
             switch direction {
             case .down:
-                return (start: CGPoint(x: 0.5, y: 0.0), end: CGPoint(x: 0.5, y: bounds.height))
+                return (start: CIVector(x: 0.5, y: bounds.height - (bounds.height * startLocation)), end: CIVector(x: 0.5, y: 0.0))
             case .up:
-                return (start: CGPoint(x: 0.5, y: bounds.height), end: CGPoint(x: 0.5, y: 0.0))
+                return (start: CIVector(x: 0.5, y: 0.0 + (bounds.height * startLocation)), end: CIVector(x: 0.5, y: bounds.height))
             case .left:
-                return (start: CGPoint(x: 0.0, y: 0.5), end: CGPoint(x: bounds.width, y: 0.5))
+                return (start: CIVector(x: bounds.width - (bounds.width * startLocation), y: 0.5), end: CIVector(x: 0.0, y: 0.5))
             case .right:
-                return (start: CGPoint(x: bounds.width, y: 0.5), end: CGPoint(x: 0.0, y: 0.5))
+                return (start: CIVector(x: 0.0 + (bounds.width * startLocation), y: 0.5), end: CIVector(x: bounds.width, y: 0.5))
             }
         }()
 
         // Configure one color to be opaque and one to be clear
-        let startColor = UIColor(white: 0.0, alpha: 1.0), endColor = UIColor(white: 0.0, alpha: 0.0)
-        let colors = [startColor.cgColor, endColor.cgColor] as CFArray
+        let startColor = CIColor(red: 0.0, green: 0.0, blue: 0.0, alpha: 1.0)
+        let endColor = CIColor(red: 0.0, green: 0.0, blue: 0.0, alpha: 0.0)
 
-        // Disable retina scaling since it won't be noticable, and saves memory
-        let format = UIGraphicsImageRendererFormat()
-        format.scale = 1.0
+        // Create a Core Image smooth linear gradient, since the classic Core Graphics gradient seems
+        // to have a much harsher starting line at the edge of the gradient
+        guard let gradientFilter = CIFilter(name: "CISmoothLinearGradient") else { return nil }
+        gradientFilter.setDefaults()
+        gradientFilter.setValue(gradientPosition.start, forKey: "inputPoint0")
+        gradientFilter.setValue(gradientPosition.end, forKey: "inputPoint1")
+        gradientFilter.setValue(startColor, forKey: "inputColor0")
+        gradientFilter.setValue(endColor, forKey: "inputColor1")
 
-        // Render the gradient
-        let graphicsRenderer = UIGraphicsImageRenderer(size: size, format: format)
-        let image = graphicsRenderer.image { context in
-            guard let gradient = CGGradient(colorsSpace: nil, colors: colors, locations: [startLocation, 1.0]) else { return }
-            context.cgContext.drawLinearGradient(gradient, start: gradientPosition.start, end: gradientPosition.end, options: [])
-        }
-        return image.cgImage
+        // Render the image out as a CGImage
+        guard let gradientImage = gradientFilter.outputImage else { return nil }
+        return CIContext().createCGImage(gradientImage, from: CGRect(origin: .zero, size: size))
     }
 
     // Sets that the blur view needs to be updated in the next layout pass
