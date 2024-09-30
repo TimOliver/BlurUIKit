@@ -21,7 +21,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         let tabBarController = UITabBarController()
         tabBarController.tabBar.standardAppearance = tabBarAppearance
         tabBarController.tabBar.scrollEdgeAppearance = tabBarAppearance
-        tabBarController.viewControllers = [MapViewController()]
+        tabBarController.viewControllers = [PhotosViewController(), MapViewController()]
 
         window = UIWindow(frame: UIScreen.main.bounds)
         window?.rootViewController = tabBarController

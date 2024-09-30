@@ -1,42 +1,40 @@
 //
-//  ViewController.swift
-//  BlurUIKit
+//  PhotosViewController.swift
+//  BlurUIKitExample
 //
-//  Created by Tim Oliver on 15/6/2024.
+//  Created by Tim Oliver on 30/9/2024.
 //
 
+import Foundation
 import UIKit
-import MapKit
 
-final class MapViewController: UIViewController {
+final class PhotosViewController: UIViewController {
 
-    let mapView = MKMapView()
     let statusBarBlurView = VariableBlurView()
 
     init() {
         super.init(nibName: nil, bundle: nil)
-        tabBarItem.title = "Maps"
-        tabBarItem.image = UIImage(systemName: "map")
-        tabBarItem.selectedImage = UIImage(systemName: "map.fill")
+        tabBarItem.title = "Home"
+        tabBarItem.image = UIImage(systemName: "house")
+        tabBarItem.selectedImage = UIImage(systemName: "house.fill")
     }
-    
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
+
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.addSubview(mapView)
-        view.addSubview(statusBarBlurView)
+        view.backgroundColor = .systemBackground
     }
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        mapView.frame = view.bounds
 
         // Clamp the status bar blur view to the top safe area
         statusBarBlurView.frame = view.bounds
         statusBarBlurView.frame.size.height = view.safeAreaInsets.top
     }
+
 }
 
