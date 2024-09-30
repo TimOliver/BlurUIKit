@@ -16,8 +16,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "229642C12C1E8768003C04C5"
-               BuildableName = "BlurUIKit.app"
-               BlueprintName = "BlurUIKit"
+               BuildableName = "BlurUIKitExample.app"
+               BlueprintName = "BlurUIKitExample"
                ReferencedContainer = "container:BlurUIKit.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -45,8 +45,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "229642C12C1E8768003C04C5"
-            BuildableName = "BlurUIKit.app"
-            BlueprintName = "BlurUIKit"
+            BuildableName = "BlurUIKitExample.app"
+            BlueprintName = "BlurUIKitExample"
             ReferencedContainer = "container:BlurUIKit.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -62,8 +62,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "229642C12C1E8768003C04C5"
-            BuildableName = "BlurUIKit.app"
-            BlueprintName = "BlurUIKit"
+            BuildableName = "BlurUIKitExample.app"
+            BlueprintName = "BlurUIKitExample"
             ReferencedContainer = "container:BlurUIKit.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

@@ -8,7 +8,7 @@
 import UIKit
 import MapKit
 
-class ViewController: UIViewController {
+class MapViewController: UIViewController {
 
     let mapView = MKMapView()
     let statusBarBlurView = VariableBlurView()
