@@ -36,7 +36,7 @@ public class VariableBlurView: UIVisualEffectView {
     }
 
     // An optional amount of insetting on the starting edge's side, to tight the gradient if desired
-    public var gradientStartingInset: GradientStartingInset? = .relative(fraction: 0.5) {
+    public var gradientStartingInset: GradientStartingInset? {
         didSet { setNeedsUpdate() }
     }
 
