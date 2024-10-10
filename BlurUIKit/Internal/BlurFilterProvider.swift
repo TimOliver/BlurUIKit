@@ -18,7 +18,7 @@ internal class BlurFilterProvider {
     /// - Parameter name: The name of the filter that this filter should be instantiated with
     /// - Returns: The new CAFilter object, or nil if the filter if it couldn't be created.
     static func blurFilter(named name: String) -> NSObject? {
-        // The only private method we need is 'CAFilter.filterWithType:'
+        // The only private method we need is '+[CAFilter filterWithType:]'
         // We probably don't need to obfuscate this since it's not prefixed with a '_'
         let selectorName = ["Type:", "With", "filter"].reversed().joined()
         let selector = NSSelectorFromString(selectorName)
@@ -31,11 +31,8 @@ internal class BlurFilterProvider {
 
         // Using the blur view filter object as a base, fetch the CAFilter class, and use that to instantiate a new object
         let type = type(of: filter)
-        if type.responds(to: selector) {
-           return type.perform(selector, with: name).takeUnretainedValue() as? NSObject
-        }
-
-        return nil
+        guard type.responds(to: selector) else { return nil }
+        return type.perform(selector, with: name).takeUnretainedValue() as? NSObject
     }
 
     /// Loop through a view's subviews and find the one with its class name containing the provided string
