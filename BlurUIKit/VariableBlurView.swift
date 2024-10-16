@@ -32,12 +32,12 @@ public class VariableBlurView: UIVisualEffectView {
 
     // The current direction of the gradient for this blur view
     public var direction: Direction = .down {
-        didSet { setNeedsUpdate() }
+        didSet { reset() }
     }
 
     // An optional amount of insetting on the starting edge's side, to tight the gradient if desired
     public var gradientStartingInset: GradientStartingInset? {
-        didSet { setNeedsUpdate() }
+        didSet { reset() }
     }
 
     // The maximum blur radius of the blur view when its gradient is at full opacity
@@ -52,6 +52,9 @@ public class VariableBlurView: UIVisualEffectView {
 
     // The variable blur view filter
     private let variableBlurFilter = BlurFilterProvider.blurFilter(named: "variableBlur")
+
+    // The current image being used as the gradient mask
+    private var gradientMaskImage: CGImage?
 
     // Track when the blur view needs to be updated
     private var needsUpdate = false
@@ -117,15 +120,15 @@ public class VariableBlurView: UIVisualEffectView {
 
     // Update the parameters of the blur filter
     private func updateBlurFilter() {
-        variableBlurFilter?.setValue(gradientMaskImage(), forKey: "inputMaskImage")
+        variableBlurFilter?.setValue(fetchGradientMaskImage(), forKey: "inputMaskImage")
         variableBlurFilter?.setValue(maximumBlurRadius, forKey: "inputRadius")
         variableBlurFilter?.setValue(true, forKey: "inputNormalizeEdges")
     }
 
     // Generates a gradient bitmap to be used with the blur filter
-    private func gradientMaskImage() -> CGImage? {
+    private func fetchGradientMaskImage() -> CGImage? {
         // Skip if we're not sized yet.
-        guard frame.size != .zero else { return nil }
+        guard frame.size.width != 0.0, frame.size.height != 0.0 else { return nil }
 
         // Generate the size, based on the current direction
         let size: CGSize = {
@@ -136,6 +139,11 @@ public class VariableBlurView: UIVisualEffectView {
                 return CGSize(width: bounds.width, height: 1.0)
             }
         }()
+
+        // If we already have a cached version of this mask, and the size hasn't changed in the interim, recycle it
+        if let gradientMaskImage, gradientMaskImage.width == Int(size.width), gradientMaskImage.height == Int(size.height) {
+            return gradientMaskImage
+        }
 
         // Determine the start location if a setting was provided
         let startLocation: CGFloat = {
@@ -178,7 +186,14 @@ public class VariableBlurView: UIVisualEffectView {
 
         // Render the image out as a CGImage
         guard let gradientImage = gradientFilter.outputImage else { return nil }
-        return CIContext().createCGImage(gradientImage, from: CGRect(origin: .zero, size: size))
+        gradientMaskImage = CIContext(options: [.useSoftwareRenderer: true]).createCGImage(gradientImage, from: CGRect(origin: .zero, size: size))
+        return gradientMaskImage
+    }
+
+    // Some state changed to the point where we need to regenerate the gradient mask image
+    private func reset() {
+        gradientMaskImage = nil
+        setNeedsUpdate()
     }
 
     // Sets that the blur view needs to be updated in the next layout pass

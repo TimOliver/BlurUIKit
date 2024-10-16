@@ -19,17 +19,16 @@ internal class BlurFilterProvider {
     /// - Returns: The new CAFilter object, or nil if the filter if it couldn't be created.
     static func blurFilter(named name: String) -> NSObject? {
         // The only private method we need is '+[CAFilter filterWithType:]'
-        // We probably don't need to obfuscate this since it's not prefixed with a '_'
         let selectorName = ["Type:", "With", "filter"].reversed().joined()
         let selector = NSSelectorFromString(selectorName)
 
-        // Fetch a filter from out of the shared blur view so we can access the CAFilter class.
+        // Fetch a known CAFilter-backed subview from out of the shared blur view so we can access that class.
         guard let backdropView = findSubview(in: blurView, containing: "backdrop"),
               let filter = backdropView.layer.filters?.first as? NSObject else {
             return nil
         }
 
-        // Using the blur view filter object as a base, fetch the CAFilter class, and use that to instantiate a new object
+        // Confirm the class we extracted responds to our selector, and instantiate it if it does.
         let type = type(of: filter)
         guard type.responds(to: selector) else { return nil }
         return type.perform(selector, with: name).takeUnretainedValue() as? NSObject
