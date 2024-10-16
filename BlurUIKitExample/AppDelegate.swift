@@ -16,7 +16,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
         let tabBarAppearance: UITabBarAppearance = UITabBarAppearance()
         tabBarAppearance.configureWithDefaultBackground()
-        tabBarAppearance.backgroundEffect = UIBlurEffect(style: .systemThinMaterial)
+        tabBarAppearance.backgroundEffect = UIBlurEffect(style: .systemMaterial)
 
         let tabBarController = UITabBarController()
         tabBarController.tabBar.standardAppearance = tabBarAppearance
