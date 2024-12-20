@@ -27,6 +27,9 @@ final class MapViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.addSubview(mapView)
+        
+        // Since the map view is sufficiently high contrast on its own, disable the tinted dimming
+        statusBarBlurView.dimmingTintColor = nil
         view.addSubview(statusBarBlurView)
     }
 
