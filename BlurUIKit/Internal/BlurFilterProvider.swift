@@ -18,7 +18,7 @@ internal class BlurFilterProvider {
     /// - Parameter name: The name of the filter that this filter should be instantiated with
     /// - Returns: The new CAFilter object, or nil if the filter if it couldn't be created.
     static func blurFilter(named name: String) -> NSObject? {
-        // The only private method we need is '+[CAFilter filterWithType:]'
+        // The only private method we need to call is '+[CAFilter filterWithType:]'
         let selectorName = ["Type:", "With", "filter"].reversed().joined()
         let selector = NSSelectorFromString(selectorName)
 
@@ -28,7 +28,8 @@ internal class BlurFilterProvider {
             return nil
         }
 
-        // Confirm the class we extracted responds to our selector, and instantiate it if it does.
+        // Confirm the class that was extracted implements the method name we need.
+        // This ensures that even if Apple changes it, we can fail gracefully.
         let type = type(of: filter)
         guard type.responds(to: selector) else { return nil }
         return type.perform(selector, with: name).takeUnretainedValue() as? NSObject
