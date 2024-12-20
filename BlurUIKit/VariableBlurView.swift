@@ -30,35 +30,56 @@ public class VariableBlurView: UIVisualEffectView {
         case relative(fraction: CGFloat)
     }
 
-    // The current direction of the gradient for this blur view
+    /// The current direction of the gradient for this blur view
     public var direction: Direction = .down {
         didSet { reset() }
     }
-
-    // An optional amount of insetting on the starting edge's side, to tight the gradient if desired
-    public var gradientStartingInset: GradientStartingInset? {
-        didSet { reset() }
+    
+    /// An optional amount of insetting on the starting edge's side, to tighten the gradient if desired
+    public var blurStartingInset: GradientStartingInset? {
+        didSet { resetBlurMask() }
+    }
+    
+    /// The maximum blur radius of the blur view when its gradient is at full opacity
+    public var maximumBlurRadius = 3.5 {
+        didSet { updateBlurFilter() }
     }
 
-    // The maximum blur radius of the blur view when its gradient is at full opacity
-    public var maximumBlurRadius = 1.5 {
-        didSet { setNeedsUpdate() }
+    /// An optional colored gradient to dim the underlying content for better contrast.
+    public var dimmingTintColor: UIColor? = .systemBackground {
+        didSet {
+            makeDimmingViewIfNeeded()
+            dimmingView?.tintColor = dimmingTintColor
+        }
+    }
+   
+    /// The alpha value of the colored gradient
+    public var dimmingAlpha: CGFloat = 0.5 {
+        didSet { dimmingView?.alpha = dimmingAlpha }
+    }
+    
+    /// The inset of the colored gradient to match the blur view if desired
+    public var dimmingStartingInset: GradientStartingInset? {
+        didSet { resetDimmingImage() }
     }
 
-    // Performs an update when the frame changes
+    /// Performs an update when the frame changes
     public override var frame: CGRect {
-        didSet { setNeedsUpdate() }
+        didSet { resetForBoundsChange(oldValue: oldValue) }
     }
 
-    // The variable blur view filter
+    /// The variable blur view filter
     private let variableBlurFilter = BlurFilterProvider.blurFilter(named: "variableBlur")
 
-    // The current image being used as the gradient mask
+    /// The current image being used as the gradient mask
     private var gradientMaskImage: CGImage?
-
-    // Track when the blur view needs to be updated
+    
+    /// Track when the images need to be regenerated
     private var needsUpdate = false
 
+    /// An optional dimming gradient shown along with the blur view
+    private var dimmingView: UIImageView?
+    
     // MARK: - Initialization
 
     init() {
@@ -91,8 +112,11 @@ public class VariableBlurView: UIVisualEffectView {
 
     public override func layoutSubviews() {
         super.layoutSubviews()
-        guard needsUpdate else { return }
+        dimmingView?.frame = bounds
         updateBlurFilter()
+        
+        guard needsUpdate else { return }
+        generateImagesAsNeeded()
         needsUpdate = false
     }
 
@@ -104,7 +128,7 @@ public class VariableBlurView: UIVisualEffectView {
 
     // MARK: - Private
 
-    // One-time setup logic
+    // One-time setup logic to configure the blur view with our filters
     private func configureView() {
         guard superview != nil, let variableBlurFilter else { return }
 
@@ -117,16 +141,101 @@ public class VariableBlurView: UIVisualEffectView {
             backdropView.layer.setValue(0.75, forKey: "scale")
         }
     }
+    
+    // Sets up (or tears down) an image view to display the dimming gradient as needed
+    private func makeDimmingViewIfNeeded() {
+        guard let dimmingTintColor else {
+            dimmingView?.removeFromSuperview()
+            dimmingView = nil
+            return
+        }
+        
+        guard dimmingView == nil else {
+            return
+        }
 
-    // Update the parameters of the blur filter
+        let imageView = UIImageView()
+        imageView.alpha = dimmingAlpha
+        imageView.tintColor = dimmingTintColor
+        contentView.addSubview(imageView)
+        
+        dimmingView = imageView
+        setNeedsUpdate()
+    }
+
+    // Update the parameters of the blur filter when the state in this view changes
     private func updateBlurFilter() {
-        variableBlurFilter?.setValue(fetchGradientMaskImage(), forKey: "inputMaskImage")
+        variableBlurFilter?.setValue(gradientMaskImage, forKey: "inputMaskImage")
         variableBlurFilter?.setValue(maximumBlurRadius, forKey: "inputRadius")
         variableBlurFilter?.setValue(true, forKey: "inputNormalizeEdges")
     }
+}
 
+// MARK: Image Reset
+
+extension VariableBlurView {
+    // Reset if a bounds change means we have to regenerate the images
+    private func resetForBoundsChange(oldValue: CGRect) {
+        let needsReset = {
+            switch direction {
+            case .down, .up:
+                return frame.height != oldValue.height
+            case .left, .right:
+                return frame.width != oldValue.width
+            }
+        }()
+        guard needsReset else { return }
+        reset()
+    }
+    
+    // Reset both the blur mask, and the dimming gradient
+    private func reset() {
+        resetBlurMask()
+        resetDimmingImage()
+    }
+    
+    // Some state changed to the point where we need to regenerate the blur mask image
+    private func resetBlurMask() {
+        gradientMaskImage = nil
+        setNeedsUpdate()
+    }
+    
+    // Some state changed to the point where we need to regenerate the dimming mask image
+    private func resetDimmingImage() {
+        dimmingView?.image = nil
+        setNeedsUpdate()
+    }
+
+    // Sets that the blur view needs to be updated in the next layout pass
+    // This allows a variety of settings to be set in one run loop, with them all being applied next loop
+    private func setNeedsUpdate() {
+        needsUpdate = true
+        setNeedsLayout()
+    }
+}
+
+// MARK: Image Generation
+
+extension VariableBlurView {
+    
+    private func generateImagesAsNeeded() {
+        // Update the blur view's gradient mask
+        if gradientMaskImage == nil {
+            gradientMaskImage = fetchGradientImage(startingInset: blurStartingInset)
+            updateBlurFilter()
+        }
+        
+        // Update the dimming view image
+        if dimmingView?.image == nil {
+            makeDimmingViewIfNeeded()
+            if let dimmingImage = fetchGradientImage(startingInset: dimmingStartingInset) {
+                dimmingView?.image = UIImage(cgImage: dimmingImage).withRenderingMode(.alwaysTemplate)
+            }
+        }
+    }
+    
     // Generates a gradient bitmap to be used with the blur filter
-    private func fetchGradientMaskImage() -> CGImage? {
+    private func fetchGradientImage(startingInset: GradientStartingInset?) -> CGImage? {
         // Skip if we're not sized yet.
         guard frame.size.width != 0.0, frame.size.height != 0.0 else { return nil }
 
@@ -147,8 +256,8 @@ public class VariableBlurView: UIVisualEffectView {
 
         // Determine the start location if a setting was provided
         let startLocation: CGFloat = {
-            guard let gradientStartingInset else { return 0.0 }
-            switch gradientStartingInset {
+            guard let startingInset else { return 0.0 }
+            switch startingInset {
                 case .absolute(let position):
                 return position / (size.width < size.height ? size.height : size.width)
                 case .relative(let fraction):
@@ -186,20 +295,7 @@ public class VariableBlurView: UIVisualEffectView {
 
         // Render the image out as a CGImage
         guard let gradientImage = gradientFilter.outputImage else { return nil }
-        gradientMaskImage = CIContext(options: [.useSoftwareRenderer: true]).createCGImage(gradientImage, from: CGRect(origin: .zero, size: size))
-        return gradientMaskImage
-    }
-
-    // Some state changed to the point where we need to regenerate the gradient mask image
-    private func reset() {
-        gradientMaskImage = nil
-        setNeedsUpdate()
-    }
-
-    // Sets that the blur view needs to be updated in the next layout pass
-    // This allows a variety of settings to be set in one run loop, with them all being applied next loop
-    private func setNeedsUpdate() {
-        needsUpdate = true
-        setNeedsLayout()
+        return CIContext(options: [.useSoftwareRenderer: true])
+            .createCGImage(gradientImage, from: CGRect(origin: .zero, size: size))
     }
 }
