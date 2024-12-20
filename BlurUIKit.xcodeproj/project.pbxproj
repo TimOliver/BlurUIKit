@@ -14,6 +14,7 @@
 		229642DB2C1E8A3F003C04C5 /* VariableBlurView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 229642DA2C1E8A3F003C04C5 /* VariableBlurView.swift */; };
 		229642DF2C1E91F7003C04C5 /* BlurFilterProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 229642DE2C1E91F7003C04C5 /* BlurFilterProvider.swift */; };
 		22D5CBC72CAAF0DE007320EE /* PhotosViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22D5CBC62CAAF0DE007320EE /* PhotosViewController.swift */; };
+		22F9D8652D160890007E1386 /* PhotosViewCollectionCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22F9D8642D160890007E1386 /* PhotosViewCollectionCell.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -26,6 +27,7 @@
 		229642DA2C1E8A3F003C04C5 /* VariableBlurView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VariableBlurView.swift; sourceTree = "<group>"; };
 		229642DE2C1E91F7003C04C5 /* BlurFilterProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlurFilterProvider.swift; sourceTree = "<group>"; };
 		22D5CBC62CAAF0DE007320EE /* PhotosViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotosViewController.swift; sourceTree = "<group>"; };
+		22F9D8642D160890007E1386 /* PhotosViewCollectionCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotosViewCollectionCell.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -62,6 +64,7 @@
 				229642C52C1E8768003C04C5 /* AppDelegate.swift */,
 				229642C92C1E8768003C04C5 /* MapViewController.swift */,
 				22D5CBC62CAAF0DE007320EE /* PhotosViewController.swift */,
+				22F9D8642D160890007E1386 /* PhotosViewCollectionCell.swift */,
 				229642CE2C1E8769003C04C5 /* Assets.xcassets */,
 				229642D02C1E8769003C04C5 /* LaunchScreen.storyboard */,
 				229642D32C1E8769003C04C5 /* Info.plist */,
@@ -157,6 +160,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				229642CA2C1E8768003C04C5 /* MapViewController.swift in Sources */,
+				22F9D8652D160890007E1386 /* PhotosViewCollectionCell.swift in Sources */,
 				229642C62C1E8768003C04C5 /* AppDelegate.swift in Sources */,
 				229642DB2C1E8A3F003C04C5 /* VariableBlurView.swift in Sources */,
 				229642DF2C1E91F7003C04C5 /* BlurFilterProvider.swift in Sources */,
