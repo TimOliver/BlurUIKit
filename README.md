@@ -1,6 +1,6 @@
 # BlurUIKit
 
-<img src="https://raw.githubusercontent.com/TimOliver/BlurUIKit/main/screenshot.webp" width="500" align="right" alt="TORoundedButton" />
+<img src="https://raw.githubusercontent.com/TimOliver/BlurUIKit/main/screenshot.webp" width="500" align="right" alt="BlurUIKit" />
 
 ![Version](https://img.shields.io/cocoapods/v/BlurUIKit.svg?style=flat)
 [![SwiftPM compatible](https://img.shields.io/badge/SwiftPM-compatible-4BC51D.svg?style=flat)](https://swift.org/package-manager/)
