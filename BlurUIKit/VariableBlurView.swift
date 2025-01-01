@@ -37,27 +37,35 @@ public class VariableBlurView: UIVisualEffectView {
         case right  // Right. iPadOS sidebar in right-to-left locales
     }
 
-    /// Tightens the blur transition by insetting the gradient image inside the blur view by a certain amount.
-    public enum GradientStartingInset {
-        // The amount of points, starting from the clear edge, insetted into the blur view before the gradient completes.
+    /// An absolute or relative amount of sizing used to customize the appearence of the blur and gradient views.
+    public enum GradientSizing {
+        // The amount of on-screen UI points starting from the origin, as a static value.
         case absolute(position: CGFloat)
-        // A value between 0.0 and 1.0 the gradient relative to the size of the view. A value of 0.5 would shrink the gradient to half the size.
+        // A value between 0.0 and 1.0 relative to the size of the view. A value of 0.5 would be half the size of this view.
         case relative(fraction: CGFloat)
+    }
+
+    /// The amount of alpha applied to the colored gradient view over the blur view to add more contrast
+    public enum DimmingAlpha {
+        // A constant value shared between light and dark mode
+        case constant(alpha: CGFloat)
+        // Different values between light mode and dark mode.
+        case interfaceStyle(lightModeAlpha: CGFloat, darkModeAlpha: CGFloat)
     }
 
     /// The current direction of the gradient for this blur view
     public var direction: Direction = .down {
         didSet { reset() }
     }
-    
-    /// An optional amount of insetting on the starting edge's side, to tighten the gradient if desired
-    public var blurStartingInset: GradientStartingInset? {
-        didSet { resetBlurMask() }
-    }
-    
+
     /// The maximum blur radius of the blur view when its gradient is at full opacity
     public var maximumBlurRadius = 3.5 {
         didSet { updateBlurFilter() }
+    }
+
+    /// An optional amount of insetting from the opaque side where the blur reaches 100%.
+    public var blurStartingInset: GradientSizing? {
+        didSet { resetBlurMask() }
     }
 
     /// An optional colored gradient to dim the underlying content for better contrast.
@@ -67,14 +75,20 @@ public class VariableBlurView: UIVisualEffectView {
             dimmingView?.tintColor = dimmingTintColor
         }
     }
-   
+
     /// The alpha value of the colored gradient
-    public var dimmingAlpha: CGFloat = 0.5 {
-        didSet { dimmingView?.alpha = dimmingAlpha }
+    public var dimmingAlpha: DimmingAlpha? = .interfaceStyle(lightModeAlpha: 0.65,
+                                                             darkModeAlpha: 0.25) {
+        didSet { setNeedsLayout() }
     }
-    
-    /// The inset of the colored gradient to match the blur view if desired
-    public var dimmingStartingInset: GradientStartingInset? {
+
+    /// An optional overshoot value to allow the colored gradient to extend outside the blur view's bounds
+    public var dimmingOvershoot: GradientSizing? = .relative(fraction: 0.25) {
+        didSet { resetDimmingImage() }
+    }
+
+    /// An optional inset position where the colored gradient hits 100% of its transition.
+    public var dimmingStartingInset: GradientSizing? {
         didSet { resetDimmingImage() }
     }
 
@@ -88,13 +102,13 @@ public class VariableBlurView: UIVisualEffectView {
 
     /// The current image being used as the gradient mask
     private var gradientMaskImage: CGImage?
-    
+
     /// Track when the images need to be regenerated
     private var needsUpdate = false
 
     /// An optional dimming gradient shown along with the blur view
     private var dimmingView: UIImageView?
-    
+
     // MARK: - Initialization
 
     init() {
@@ -127,9 +141,11 @@ public class VariableBlurView: UIVisualEffectView {
 
     public override func layoutSubviews() {
         super.layoutSubviews()
-        dimmingView?.frame = bounds
         updateBlurFilter()
-        
+
+        dimmingView?.frame = dimmingViewFrame()
+        updateDimmingViewAlpha()
+
         guard needsUpdate else { return }
         generateImagesAsNeeded()
         needsUpdate = false
@@ -139,6 +155,7 @@ public class VariableBlurView: UIVisualEffectView {
         super.traitCollectionDidChange(previousTraitCollection)
         configureView()
         updateBlurFilter()
+        updateDimmingViewAlpha()
     }
 
     // MARK: - Private
@@ -156,7 +173,7 @@ public class VariableBlurView: UIVisualEffectView {
             backdropView.layer.setValue(0.75, forKey: "scale")
         }
     }
-    
+
     // Sets up (or tears down) an image view to display the dimming gradient as needed
     private func makeDimmingViewIfNeeded() {
         guard let dimmingTintColor else {
@@ -164,16 +181,15 @@ public class VariableBlurView: UIVisualEffectView {
             dimmingView = nil
             return
         }
-        
+
         guard dimmingView == nil else {
             return
         }
 
         let imageView = UIImageView()
-        imageView.alpha = dimmingAlpha
         imageView.tintColor = dimmingTintColor
         contentView.addSubview(imageView)
-        
+
         dimmingView = imageView
         setNeedsUpdate()
     }
@@ -183,6 +199,39 @@ public class VariableBlurView: UIVisualEffectView {
         variableBlurFilter?.setValue(gradientMaskImage, forKey: "inputMaskImage")
         variableBlurFilter?.setValue(maximumBlurRadius, forKey: "inputRadius")
         variableBlurFilter?.setValue(true, forKey: "inputNormalizeEdges")
+    }
+
+    // Update the alpha value of the colored gradient as needed
+    private func updateDimmingViewAlpha() {
+        guard let dimmingAlpha else {
+            dimmingView?.alpha = 0.0
+            return
+        }
+
+        switch dimmingAlpha {
+        case .constant(alpha: let alpha):
+            dimmingView?.alpha = alpha
+        case .interfaceStyle(lightModeAlpha: let lightModeAlpha,
+                             darkModeAlpha: let darkModeAlpha):
+            let isDarkMode = traitCollection.userInterfaceStyle == .dark
+            dimmingView?.alpha = isDarkMode ? darkModeAlpha : lightModeAlpha
+        }
+    }
+
+    // Layout the dimming view, taking direction and overshoot into account
+    private func dimmingViewFrame() -> CGRect {
+        var frame = bounds
+        switch direction {
+        case .down, .up:
+            let adjustedHeight = applyOvershoot(to: frame.height, overshoot: dimmingOvershoot)
+            frame.size.height = adjustedHeight
+            frame.origin.y = direction == .up ? -(adjustedHeight - bounds.height) : 0.0
+        case .left, .right:
+            let adjustedWidth = applyOvershoot(to: frame.width, overshoot: dimmingOvershoot)
+            frame.size.width = adjustedWidth
+            frame.origin.x = direction == .left ? -(adjustedWidth - bounds.width) : 0.0
+        }
+        return frame
     }
 }
 
@@ -202,19 +251,19 @@ extension VariableBlurView {
         guard needsReset else { return }
         reset()
     }
-    
+
     // Reset both the blur mask, and the dimming gradient
     private func reset() {
         resetBlurMask()
         resetDimmingImage()
     }
-    
+
     // Some state changed to the point where we need to regenerate the blur mask image
     private func resetBlurMask() {
         gradientMaskImage = nil
         setNeedsUpdate()
     }
-    
+
     // Some state changed to the point where we need to regenerate the dimming mask image
     private func resetDimmingImage() {
         dimmingView?.image = nil
@@ -232,25 +281,25 @@ extension VariableBlurView {
 // MARK: Image Generation
 
 extension VariableBlurView {
-    
+
     private func generateImagesAsNeeded() {
         // Update the blur view's gradient mask
         if gradientMaskImage == nil {
             gradientMaskImage = fetchGradientImage(startingInset: blurStartingInset)
             updateBlurFilter()
         }
-        
+
         // Update the dimming view image
         if dimmingView?.image == nil {
             makeDimmingViewIfNeeded()
-            if let dimmingImage = fetchGradientImage(startingInset: dimmingStartingInset) {
+            if let dimmingImage = fetchGradientImage(startingInset: dimmingStartingInset, overshoot: dimmingOvershoot) {
                 dimmingView?.image = UIImage(cgImage: dimmingImage).withRenderingMode(.alwaysTemplate)
             }
         }
     }
-    
+
     // Generates a gradient bitmap to be used with the blur filter
-    private func fetchGradientImage(startingInset: GradientStartingInset?) -> CGImage? {
+    private func fetchGradientImage(startingInset: GradientSizing?, overshoot: GradientSizing? = nil) -> CGImage? {
         // Skip if we're not sized yet.
         guard frame.size.width != 0.0, frame.size.height != 0.0 else { return nil }
 
@@ -258,16 +307,11 @@ extension VariableBlurView {
         let size: CGSize = {
             switch direction {
             case .up, .down:
-                return CGSize(width: 1.0, height: bounds.height)
+                return CGSize(width: 1.0, height: applyOvershoot(to: bounds.height, overshoot: overshoot))
             case .left, .right:
-                return CGSize(width: bounds.width, height: 1.0)
+                return CGSize(width: applyOvershoot(to: bounds.width, overshoot: overshoot), height: 1.0)
             }
         }()
-
-        // If we already have a cached version of this mask, and the size hasn't changed in the interim, recycle it
-        if let gradientMaskImage, gradientMaskImage.width == Int(size.width), gradientMaskImage.height == Int(size.height) {
-            return gradientMaskImage
-        }
 
         // Determine the start location if a setting was provided
         let startLocation: CGFloat = {
@@ -301,7 +345,7 @@ extension VariableBlurView {
 
         // Create a Core Image smooth linear gradient, since the classic Core Graphics gradient seems
         // to have a much harsher starting line at the edge of the gradient
-        guard let gradientFilter = CIFilter(name: "CISmoothLinearGradient") else { return nil }
+        guard let gradientFilter = CIFilter(name: "CILinearGradient") else { return nil }
         gradientFilter.setDefaults()
         gradientFilter.setValue(gradientPosition.start, forKey: "inputPoint0")
         gradientFilter.setValue(gradientPosition.end, forKey: "inputPoint1")
@@ -312,5 +356,16 @@ extension VariableBlurView {
         guard let gradientImage = gradientFilter.outputImage else { return nil }
         return CIContext(options: [.useSoftwareRenderer: true])
             .createCGImage(gradientImage, from: CGRect(origin: .zero, size: size))
+    }
+
+    // Apply an optional overshoot value to this image
+    private func applyOvershoot(to value: CGFloat, overshoot: GradientSizing?) -> CGFloat {
+        guard let overshoot else { return value }
+        switch overshoot {
+        case .absolute(position: let position):
+            return value + position
+        case .relative(fraction: let fraction):
+            return value + (value * fraction)
+        }
     }
 }
