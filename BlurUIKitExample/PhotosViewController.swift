@@ -22,10 +22,10 @@ final class PhotosViewController: UIViewController {
     
     init() {
         super.init(nibName: nil, bundle: nil)
-        tabBarItem.title = "Home"
-        tabBarItem.image = UIImage(systemName: "house")
-        tabBarItem.selectedImage = UIImage(systemName: "house.fill")
-        
+        tabBarItem.title = "Photos"
+        tabBarItem.image = UIImage(systemName: "photo.stack")
+        tabBarItem.selectedImage = UIImage(systemName: "photo.stack")
+
         collectionView.register(PhotosViewCollectionCell.self, forCellWithReuseIdentifier: cellIdentifier)
         collectionView.dataSource = self
         collectionView.delegate = self
@@ -58,6 +58,13 @@ final class PhotosViewController: UIViewController {
         collectionView.contentInset.left = insets
         collectionView.contentInset.right = insets
         collectionView.collectionViewLayout.invalidateLayout()
+    }
+
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        super.viewWillTransition(to: size, with: coordinator)
+        coordinator.animate(alongsideTransition: { (_) in
+            self.collectionView.collectionViewLayout.invalidateLayout()
+        }, completion: nil)
     }
 }
 
