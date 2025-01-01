@@ -39,6 +39,8 @@ blurView.dimmingOvershoot = .relative(fraction: 0.25)
 
 `BlurUIKit` should work with iOS 14 and above. It may work on lower versions of iOS, but this hasnt been tested.
 
+# Installation
+
 <details>
   <summary><strong>Manual Installation</strong></summary>
 
