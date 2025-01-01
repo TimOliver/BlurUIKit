@@ -24,7 +24,7 @@ import UIKit
 
 // An internal class that creates, manages and vends the blur filters
 // used by the public classes of this framework.
-internal class BlurFilterProvider {
+@MainActor internal class BlurFilterProvider {
 
     // A shared blur visual effect view that is used to hook and extract a reference to the CAFilter class
     static let blurView = UIVisualEffectView(effect: UIBlurEffect(style: .regular))
