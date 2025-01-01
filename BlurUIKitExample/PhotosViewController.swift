@@ -63,11 +63,16 @@ final class PhotosViewController: UIViewController {
 
 extension PhotosViewController: UICollectionViewDataSource {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        5
+        8
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        return collectionView.dequeueReusableCell(withReuseIdentifier: cellIdentifier, for: indexPath)
+        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: cellIdentifier,
+                                                            for: indexPath) as? PhotosViewCollectionCell else {
+            fatalError("Incorrect cell type")
+        }
+        cell.index = indexPath.item
+        return cell
     }
 }
 
@@ -77,6 +82,6 @@ extension PhotosViewController: UICollectionViewDelegateFlowLayout {
                         sizeForItemAt indexPath: IndexPath) -> CGSize {
         // Given the readable width of the available screen, apply a standardized aspect ratio
         // to get a consistent height
-        CGSize(width: readableWidth, height: readableWidth * 0.475)
+        CGSize(width: readableWidth, height: readableWidth / 1.777)
     }
 }
