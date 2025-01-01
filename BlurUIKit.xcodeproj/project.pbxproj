@@ -19,6 +19,7 @@
 
 /* Begin PBXFileReference section */
 		226E9CBC2D25388F007EFE4D /* BlurUIKit.podspec */ = {isa = PBXFileReference; lastKnownFileType = text; path = BlurUIKit.podspec; sourceTree = "<group>"; };
+		226E9CBE2D253B16007EFE4D /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
 		229642C22C1E8768003C04C5 /* BlurUIKitExample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BlurUIKitExample.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		229642C52C1E8768003C04C5 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		229642C92C1E8768003C04C5 /* MapViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapViewController.swift; sourceTree = "<group>"; };
@@ -52,6 +53,7 @@
 				22F9D8662D162106007E1386 /* LICENSE */,
 				22F9D8672D162106007E1386 /* README.md */,
 				226E9CBC2D25388F007EFE4D /* BlurUIKit.podspec */,
+				226E9CBE2D253B16007EFE4D /* Package.swift */,
 				229642C32C1E8768003C04C5 /* Products */,
 			);
 			sourceTree = "<group>";
