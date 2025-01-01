@@ -32,7 +32,6 @@ blurView.dimmingTintColor = .red
 
 // The tint color can 'overshoot' the blur view to add more gradual transition
 blurView.dimmingOvershoot = .relative(fraction: 0.25)
-}
 
 ```
 
@@ -40,17 +39,22 @@ blurView.dimmingOvershoot = .relative(fraction: 0.25)
 
 `BlurUIKit` should work with iOS 14 and above. It may work on lower versions of iOS, but this hasnt been tested.
 
-## Manual Installation
+<details>
+  <summary><strong>Manual Installation</strong></summary>
 
 Copy the contents of the `BlurUIKit` folder to your app's project folder.
+</details>
 
-## CocoaPods
+<details>
+  <summary><strong>CocoaPods</strong></summary>
 
 ```
 pod 'BlurUIKit'
 ```
+</details>
 
-## SPM
+<details>
+  <summary><strong>Swift Package Manager</strong></summary>
 
 Add the following to your `Package.swift`:
 ``` swift
@@ -59,6 +63,7 @@ dependencies: [
   .package(url: "https://github.com/TimOliver/BlurUIKit.git"),
 ],
 ```
+</details>
 
 # Is this really App Store safe?
 
@@ -66,7 +71,7 @@ _tl;dr Yes, it should be 99.9% safe for the App Store. If your app gets rejected
 
 # Credits
 
-`BlurUIKit` was created by [Tim Oliver](http://twitter.com/TimOliverAU) as a component of [iComics](http://icomics.co).
+`BlurUIKit` was created by [Tim Oliver](http://threads.net/@timoliver) as a component of [iComics](http://icomics.co).
 
 # License
 
