@@ -9,5 +9,5 @@ Pod::Spec.new do |s|
   s.source_files = 'BlurUIKit/**/*.{swift}'
   s.requires_arc = true
   s.swift_version = '6.0'
-  s.ios.deployment_target   = '12.0'
+  s.ios.deployment_target   = '14.0'
 end
