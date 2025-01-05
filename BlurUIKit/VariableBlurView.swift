@@ -111,12 +111,12 @@ public class VariableBlurView: UIVisualEffectView {
 
     // MARK: - Initialization
 
-    init() {
+    public init() {
         super.init(effect: UIBlurEffect(style: .regular))
         commonInit()
     }
 
-    init(frame: CGRect) {
+    public init(frame: CGRect) {
         super.init(effect: UIBlurEffect(style: .regular))
         commonInit()
     }
