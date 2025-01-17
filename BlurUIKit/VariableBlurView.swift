@@ -77,7 +77,7 @@ public class VariableBlurView: UIVisualEffectView {
     }
 
     /// The alpha value of the colored gradient
-    public var dimmingAlpha: DimmingAlpha? = .interfaceStyle(lightModeAlpha: 0.65,
+    public var dimmingAlpha: DimmingAlpha? = .interfaceStyle(lightModeAlpha: 0.5,
                                                              darkModeAlpha: 0.25) {
         didSet { setNeedsLayout() }
     }
@@ -292,14 +292,16 @@ extension VariableBlurView {
         // Update the dimming view image
         if dimmingView?.image == nil {
             makeDimmingViewIfNeeded()
-            if let dimmingImage = fetchGradientImage(startingInset: dimmingStartingInset, overshoot: dimmingOvershoot) {
+            if let dimmingImage = fetchGradientImage(startingInset: dimmingStartingInset,
+                                                     smooth: true,
+                                                     overshoot: dimmingOvershoot) {
                 dimmingView?.image = UIImage(cgImage: dimmingImage).withRenderingMode(.alwaysTemplate)
             }
         }
     }
 
     // Generates a gradient bitmap to be used with the blur filter
-    private func fetchGradientImage(startingInset: GradientSizing?, overshoot: GradientSizing? = nil) -> CGImage? {
+    private func fetchGradientImage(startingInset: GradientSizing?, smooth: Bool = false, overshoot: GradientSizing? = nil) -> CGImage? {
         // Skip if we're not sized yet.
         guard frame.size.width != 0.0, frame.size.height != 0.0 else { return nil }
 
@@ -345,7 +347,8 @@ extension VariableBlurView {
 
         // Create a Core Image smooth linear gradient, since the classic Core Graphics gradient seems
         // to have a much harsher starting line at the edge of the gradient
-        guard let gradientFilter = CIFilter(name: "CILinearGradient") else { return nil }
+        let filterName = smooth ? "CILinearGradient" : "CILinearGradient"
+        guard let gradientFilter = CIFilter(name: filterName) else { return nil }
         gradientFilter.setDefaults()
         gradientFilter.setValue(gradientPosition.start, forKey: "inputPoint0")
         gradientFilter.setValue(gradientPosition.end, forKey: "inputPoint1")
