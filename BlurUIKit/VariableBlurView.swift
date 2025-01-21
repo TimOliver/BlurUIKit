@@ -347,7 +347,7 @@ extension VariableBlurView {
 
         // Create a Core Image smooth linear gradient, since the classic Core Graphics gradient seems
         // to have a much harsher starting line at the edge of the gradient
-        let filterName = smooth ? "CILinearGradient" : "CILinearGradient"
+        let filterName = smooth ? "CISmoothLinearGradient" : "CILinearGradient"
         guard let gradientFilter = CIFilter(name: filterName) else { return nil }
         gradientFilter.setDefaults()
         gradientFilter.setValue(gradientPosition.start, forKey: "inputPoint0")
