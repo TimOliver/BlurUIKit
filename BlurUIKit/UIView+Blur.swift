@@ -64,6 +64,18 @@ extension UIView {
         }
     }
 
+    /// Apply a gaussian blur to this view with an animation
+    public func setBlurRadiusAnimated(radius: CGFloat, duration: TimeInterval = 0.45) {
+        let currentRadius = self.blurRadius
+        self.blurRadius = radius
+
+        let blurAnimation = CABasicAnimation(keyPath: "filters.gaussianBlur.inputRadius")
+        blurAnimation.fromValue = currentRadius
+        blurAnimation.toValue = radius
+        blurAnimation.duration = duration
+        self.layer.add(blurAnimation, forKey: "filters.gaussianBlur.inputRadius")
+    }
+
     // Save the associated filter with this view so it's quicker to fetch on subsequent calls
     private var blurFilter: NSObject? {
         get {
