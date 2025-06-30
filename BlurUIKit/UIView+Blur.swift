@@ -39,21 +39,33 @@ extension UIView {
         }
 
         set {
-            var filter: NSObject? = self.blurFilter
-            if filter == nil {
-                filter = BlurFilterProvider.blurFilter(named: "gaussianBlur")
-                if let filter {
-                    self.blurFilter = filter
-                    self.layer.filters = [filter]
+            // We can't update the current value of existing filters. We need to remove the current
+            // one from the view, and provide an updated one in its place=.
+            var newFilter: NSObject? = nil
+            if let filter = self.blurFilter {
+                // Remove any existing filters if we need
+                if let firstIndex = self.layer.filters?.firstIndex(where: { ($0 as? NSObject) == filter }) {
+                    self.layer.filters?.remove(at: firstIndex)
                 }
+                // Create a fresh filter object from the previous one
+                newFilter = BlurFilterProvider.blurFilterCopy(from: filter, named: "gaussianBlur")
+            } else {
+                // If this is the first time, create a new one from scratch
+                newFilter = BlurFilterProvider.blurFilter(named: "gaussianBlur")
             }
-            guard let filter else { return }
-            filter.setValue(newValue, forKey: "inputRadius")
+            guard let newFilter else { return }
+            newFilter.setValue(newValue, forKey: "inputRadius")
+            if self.layer.filters != nil {
+                self.layer.filters!.append(newFilter)
+            } else {
+                self.layer.filters = [newFilter]
+            }
+            self.blurFilter = newFilter
         }
     }
 
-    // Save the associated filter with this view so it's easier to fetch on subsequent calls
-    var blurFilter: NSObject? {
+    // Save the associated filter with this view so it's quicker to fetch on subsequent calls
+    private var blurFilter: NSObject? {
         get {
             return objc_getAssociatedObject(self, &BlurFilterObjectHandle) as? NSObject
         }

@@ -15,6 +15,7 @@
 		229642DF2C1E91F7003C04C5 /* BlurFilterProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 229642DE2C1E91F7003C04C5 /* BlurFilterProvider.swift */; };
 		22D5CBC72CAAF0DE007320EE /* PhotosViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22D5CBC62CAAF0DE007320EE /* PhotosViewController.swift */; };
 		22F7A97D2E12E3A300FC5943 /* UIView+Blur.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22F7A97C2E12E39E00FC5943 /* UIView+Blur.swift */; };
+		22F7A97F2E12E67900FC5943 /* BlurViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22F7A97E2E12E67800FC5943 /* BlurViewController.swift */; };
 		22F9D8652D160890007E1386 /* PhotosViewCollectionCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22F9D8642D160890007E1386 /* PhotosViewCollectionCell.swift */; };
 /* End PBXBuildFile section */
 
@@ -31,6 +32,7 @@
 		229642DE2C1E91F7003C04C5 /* BlurFilterProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlurFilterProvider.swift; sourceTree = "<group>"; };
 		22D5CBC62CAAF0DE007320EE /* PhotosViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotosViewController.swift; sourceTree = "<group>"; };
 		22F7A97C2E12E39E00FC5943 /* UIView+Blur.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIView+Blur.swift"; sourceTree = "<group>"; };
+		22F7A97E2E12E67800FC5943 /* BlurViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlurViewController.swift; sourceTree = "<group>"; };
 		22F9D8642D160890007E1386 /* PhotosViewCollectionCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotosViewCollectionCell.swift; sourceTree = "<group>"; };
 		22F9D8662D162106007E1386 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
 		22F9D8672D162106007E1386 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
@@ -75,6 +77,7 @@
 				229642C92C1E8768003C04C5 /* MapViewController.swift */,
 				22D5CBC62CAAF0DE007320EE /* PhotosViewController.swift */,
 				22F9D8642D160890007E1386 /* PhotosViewCollectionCell.swift */,
+				22F7A97E2E12E67800FC5943 /* BlurViewController.swift */,
 				229642CE2C1E8769003C04C5 /* Assets.xcassets */,
 				229642D02C1E8769003C04C5 /* LaunchScreen.storyboard */,
 				229642D32C1E8769003C04C5 /* Info.plist */,
@@ -177,6 +180,7 @@
 				229642DB2C1E8A3F003C04C5 /* VariableBlurView.swift in Sources */,
 				229642DF2C1E91F7003C04C5 /* BlurFilterProvider.swift in Sources */,
 				22D5CBC72CAAF0DE007320EE /* PhotosViewController.swift in Sources */,
+				22F7A97F2E12E67900FC5943 /* BlurViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
