@@ -30,21 +30,29 @@ import UIKit
     static let blurView = UIVisualEffectView(effect: UIBlurEffect(style: .regular))
 
     /// Vends a newly instantiated CAFilter instance with the provided filter name
-    /// - Parameter name: The name of the filter that this filter should be instantiated with
+    /// - Parameter name: The name of the filter that this filter will be instantiated with.
     /// - Returns: The new CAFilter object, or nil if the filter if it couldn't be created.
     static func blurFilter(named name: String) -> NSObject? {
-        // The only private method we need to call is '+[CAFilter filterWithType:]'
-        let selectorName = ["Type:", "With", "filter"].reversed().joined()
-        let selector = NSSelectorFromString(selectorName)
-
         // Fetch a known CAFilter-backed subview from out of the shared blur view so we can access that class.
         guard let backdropView = findSubview(in: blurView, containing: "backdrop"),
               let filter = backdropView.layer.filters?.first as? NSObject else {
             return nil
         }
+        return blurFilterCopy(from: filter, named: name)
+    }
 
-        // Confirm the class that was extracted implements the method name we need.
+    /// With an already instantiated CAFilter object as the base, create a completely new instance with the specified filter type.
+    /// - Parameters:
+    ///   - filter: The existing filter to use as a base
+    ///   - name: The name of the filter that this filter will be instantiated with.
+    /// - Returns: The new CAFilter object, or nil if the filter if it couldn't be created.
+    static func blurFilterCopy(from filter: NSObject, named name: String) -> NSObject? {
+        // Confirm this object implements the method name we need.
         // This ensures that even if Apple changes it, we can fail gracefully.
+        // The only private method we need to call is '+[CAFilter filterWithType:]'
+        let selectorName = ["Type:", "With", "filter"].reversed().joined()
+        let selector = NSSelectorFromString(selectorName)
+
         let type = type(of: filter)
         guard type.responds(to: selector) else { return nil }
         return type.perform(selector, with: name).takeUnretainedValue() as? NSObject
