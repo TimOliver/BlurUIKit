@@ -24,7 +24,7 @@ import ObjectiveC
 import UIKit
 
 // A global pointer to use as the associated object handle
-private var BlurFilterObjectHandle: UInt8 = 0
+@MainActor private var BlurFilterObjectHandle: UInt8 = 0
 
 // Applies a gaussian blur to a UIView without blurring the content below it.
 extension UIView {
