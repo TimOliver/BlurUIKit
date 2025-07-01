@@ -29,7 +29,7 @@ final class BlurViewController: UIViewController {
         
         view.backgroundColor = .systemBackground
 
-        backgroundView.backgroundColor = .tertiarySystemBackground  
+        backgroundView.backgroundColor = .tertiarySystemBackground
         view.addSubview(backgroundView)
 
         redSquare.backgroundColor = .systemRed
