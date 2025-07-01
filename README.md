@@ -17,6 +17,7 @@ _We need your help! If you wish for this blur effect to become an officially sup
 * Allows an optional 'dimming' colored gradient to add additional contrast when needed.
 * Dimming and blur gradients can be configured independently.
 * Highly optimized to avoid regenerating gradient mask images unless needed.
+* Also enables applying gaussian blur to UIView instances.
 
 # Examples
 
@@ -32,6 +33,19 @@ blurView.dimmingTintColor = .red
 
 // The tint color can 'overshoot' the blur view to add more gradual transition
 blurView.dimmingOvershoot = .relative(fraction: 0.25)
+
+```
+
+Another feature of `BlurUIKit` is being able to apply gaussian blur to `UIView` instances.
+
+```swift
+
+// Create a new UIView instance
+let redSquare = UIView(frame: CGRect(x: 0, y: 0, width: 100, height: 100))
+redSquare.backgroundColor = .systemRed
+
+// Apply gaussian blur to it
+redSquare.blurRadius = 30.0
 
 ```
 
