@@ -9,6 +9,7 @@ import UIKit
 
 final class BlurViewController: UIViewController {
 
+    private let backgroundView = UIView()
     private let redSquare = UIView()
     private let slider = UISlider()
 
@@ -18,7 +19,7 @@ final class BlurViewController: UIViewController {
         tabBarItem.image = UIImage(systemName: "circle.dotted")
         tabBarItem.selectedImage = UIImage(systemName: "circle.dotted")
     }
-    
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
@@ -27,7 +28,10 @@ final class BlurViewController: UIViewController {
         super.viewDidLoad()
         
         view.backgroundColor = .systemBackground
-        
+
+        backgroundView.backgroundColor = .tertiarySystemBackground  
+        view.addSubview(backgroundView)
+
         redSquare.backgroundColor = .systemRed
         view.addSubview(redSquare)
 
@@ -60,6 +64,10 @@ final class BlurViewController: UIViewController {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         redSquare.center = view.center
+
+        backgroundView.frame.size = redSquare.bounds.size
+        backgroundView.center = redSquare.center
+        backgroundView.center.x += redSquare.bounds.width * 0.25
 
         let insetMargin = view.layoutMargins.left + view.layoutMargins.right
         slider.frame.size.width = view.frame.width - insetMargin
