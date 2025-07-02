@@ -23,43 +23,29 @@
 import ObjectiveC
 import UIKit
 
-// A global pointer to use as the associated object handle
-@MainActor private var BlurFilterObjectHandle: UInt8 = 0
-
 // Applies a gaussian blur to a UIView without blurring the content below it.
 extension UIView {
 
     /// Set the gaussian blur radius of this view
     public var blurRadius: CGFloat {
         get {
-            if let filter = blurFilter {
-                return filter.value(forKey: "inputRadius") as? CGFloat ?? 0.0
-            }
-            return 0.0
+            guard let filter = blurFilter else { return 0.0 }
+            return filter.value(forKey: "inputRadius") as? CGFloat ?? 0.0
         }
 
         set {
-            // We can't update the current value of existing filters. We need to remove the current
-            // one from the view, and provide an updated one in its place=.
+            // We can't update the radius of an existing object,
+            // so copy and create a fresh object from it.
             var newFilter: NSObject? = nil
             if let filter = self.blurFilter {
-                // Remove any existing filters if we need
-                if let firstIndex = self.layer.filters?.firstIndex(where: { ($0 as? NSObject) == filter }) {
-                    self.layer.filters?.remove(at: firstIndex)
-                }
-                // Create a fresh filter object from the previous one
+                self.layer.filters?.removeAll { ($0 as? NSObject) == filter }
                 newFilter = BlurFilterProvider.blurFilterCopy(from: filter, named: "gaussianBlur")
             } else {
-                // If this is the first time, create a new one from scratch
                 newFilter = BlurFilterProvider.blurFilter(named: "gaussianBlur")
             }
             guard let newFilter else { return }
             newFilter.setValue(newValue, forKey: "inputRadius")
-            if self.layer.filters != nil {
-                self.layer.filters!.append(newFilter)
-            } else {
-                self.layer.filters = [newFilter]
-            }
+            self.layer.filters = (self.layer.filters ?? []) + [newFilter]
             self.blurFilter = newFilter
         }
     }
@@ -75,7 +61,14 @@ extension UIView {
         blurAnimation.duration = duration
         self.layer.add(blurAnimation, forKey: "filters.gaussianBlur.inputRadius")
     }
+}
 
+// MARK: - Private
+
+// A global pointer to use as the associated object handle
+@MainActor private var BlurFilterObjectHandle: UInt8 = 0
+
+extension UIView {
     // Save the associated filter with this view so it's quicker to fetch on subsequent calls
     private var blurFilter: NSObject? {
         get {
