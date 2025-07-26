@@ -7,7 +7,7 @@
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/TimOliver/BlurUIKit/main/LICENSE)
 ![Platform](https://img.shields.io/cocoapods/p/BlurUIKit.svg?style=flat)
 
-_We need your help! If you wish for this blur effect to become an officially supported API, please file a radar and duplicate [FB13949531](https://openradar.appspot.com/FB13949531)!_
+_As of iOS 26, [this is now a public API](https://developer.apple.com/documentation/uikit/uiscrollview/topedgeeffect)! Woohoo! However, please feel free to continue using this library if you need additional control, or need to continue supporting iOS 18._
 
 `BlurUIKit` is an open source UI framework that exposes more of the dynamic blur capabilities of UIKit in an App Store safe way. Namely, it exposes the 'progressive blur' effect Apple has started using in system apps where underlaying content gets progressively more blurry along a gradient pattern.
 
