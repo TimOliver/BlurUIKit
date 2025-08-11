@@ -53,6 +53,9 @@ public class VariableBlurView: UIVisualEffectView {
         case interfaceStyle(lightModeAlpha: CGFloat, darkModeAlpha: CGFloat)
     }
 
+    /// The default value for "dimmingTintColor"
+    static let dimmingTintColorDefault: UIColor = .systemBackground
+
     /// The current direction of the gradient for this blur view
     public var direction: Direction = .down {
         didSet { reset() }
@@ -69,7 +72,7 @@ public class VariableBlurView: UIVisualEffectView {
     }
 
     /// An optional colored gradient to dim the underlying content for better contrast.
-    public var dimmingTintColor: UIColor? = .systemBackground {
+    public var dimmingTintColor: UIColor? = dimmingTintColorDefault {
         didSet {
             makeDimmingViewIfNeeded()
             dimmingView?.tintColor = dimmingTintColor
