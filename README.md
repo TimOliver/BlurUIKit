@@ -13,7 +13,8 @@ _As of iOS 26, [this is now a public API](https://developer.apple.com/documentat
 
 # Features
 
-* Enables the ability to add progressive blur or gaussian blur effects to UIKit applications.
+* Adds an extension on `UIView` to enable real time gaussian blurs on live view content.
+* Enables the ability to add a progressive blur gradient under areas that require higher contrast between layers.
 * Allows an optional 'dimming' colored gradient to add additional contrast when needed.
 * Dimming and blur gradients can be configured independently.
 * Highly optimized to avoid regenerating gradient mask images unless needed.
