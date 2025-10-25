@@ -9,7 +9,7 @@
 
 _As of iOS 26, [this is now a public API](https://developer.apple.com/documentation/uikit/uiscrollview/topedgeeffect)! Woohoo! However, please feel free to continue using this library if you need additional control, or need to continue supporting iOS 18._
 
-`BlurUIKit` is an open source UI framework that exposes more of the dynamic blur capabilities of UIKit in an App Store safe way. Namely, it exposes the 'progressive blur' effect Apple has started using in system apps where underlaying content gets progressively more blurry along a gradient pattern. It also exposes the ability to apply gaussian blurs directly to dynamic views, useful for blur-fade transitions.
+`BlurUIKit` is an open source UI framework that exposes more of the dynamic blur capabilities of UIKit in an App Store safe way. Namely, it exposes the 'progressive blur' effect Apple has started using in system apps where underlaying content gets progressively more blurry along a gradient pattern. It also exposes the ability to apply gaussian blurs directly to live `UIView` objects, useful for dynamic blur-fade transitions.
 
 # Features
 
