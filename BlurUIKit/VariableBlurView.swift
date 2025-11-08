@@ -38,7 +38,7 @@ public class VariableBlurView: UIVisualEffectView {
         case right  // Right. iPadOS sidebar in right-to-left locales
     }
 
-    /// An absolute or relative amount of sizing used to customize the appearance of the blur and gradient views.
+    /// An absolute or relative amount of sizing used to customize the appearence of the blur and gradient views.
     public enum GradientSizing {
         // The amount of on-screen UI points starting from the origin, as a static value.
         case absolute(position: CGFloat)
@@ -53,9 +53,6 @@ public class VariableBlurView: UIVisualEffectView {
         // Different values between light mode and dark mode.
         case interfaceStyle(lightModeAlpha: CGFloat, darkModeAlpha: CGFloat)
     }
-
-    /// The default value for "dimmingTintColor"
-    static let dimmingTintColorDefault: UIColor = .systemBackground
 
     /// The current direction of the gradient for this blur view
     public var direction: Direction = .down {
@@ -73,7 +70,7 @@ public class VariableBlurView: UIVisualEffectView {
     }
 
     /// An optional colored gradient to dim the underlying content for better contrast.
-    public var dimmingTintColor: UIColor? = dimmingTintColorDefault {
+    public var dimmingTintColor: UIColor? = .systemBackground {
         didSet {
             makeDimmingViewIfNeeded()
             dimmingView?.tintColor = dimmingTintColor
@@ -366,9 +363,9 @@ extension VariableBlurView {
         guard let overshoot else { return value }
         switch overshoot {
         case .absolute(position: let position):
-            return value + position
+            return (value + position).rounded(.up)
         case .relative(fraction: let fraction):
-            return value + (value * fraction)
+            return (value + (value * fraction)).rounded(.up)
         }
     }
 }
