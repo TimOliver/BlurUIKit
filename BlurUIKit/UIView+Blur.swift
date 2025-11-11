@@ -24,6 +24,7 @@ import ObjectiveC
 import UIKit
 
 // Applies a gaussian blur to a UIView without blurring the content below it.
+@available(iOS 14, *)
 extension UIView {
 
     /// Set the gaussian blur radius of this view

@@ -27,6 +27,7 @@ import CoreImage
 /// that gradually 'ramps' up in blur intensity from one edge to the other.
 /// This is great for separating separate layers of content (such as the iOS status bar)
 /// without any hard border lines.
+@available(iOS 14, *)
 public class VariableBlurView: UIVisualEffectView {
 
     /// The possible directions that the gradient of this blur view may flow in.
@@ -37,7 +38,7 @@ public class VariableBlurView: UIVisualEffectView {
         case right  // Right. iPadOS sidebar in right-to-left locales
     }
 
-    /// An absolute or relative amount of sizing used to customize the appearance of the blur and gradient views.
+    /// An absolute or relative amount of sizing used to customize the appearence of the blur and gradient views.
     public enum GradientSizing {
         // The amount of on-screen UI points starting from the origin, as a static value.
         case absolute(position: CGFloat)
@@ -52,9 +53,6 @@ public class VariableBlurView: UIVisualEffectView {
         // Different values between light mode and dark mode.
         case interfaceStyle(lightModeAlpha: CGFloat, darkModeAlpha: CGFloat)
     }
-
-    /// The default value for "dimmingTintColor"
-    static let dimmingTintColorDefault: UIColor = .systemBackground
 
     /// The current direction of the gradient for this blur view
     public var direction: Direction = .down {
@@ -72,7 +70,7 @@ public class VariableBlurView: UIVisualEffectView {
     }
 
     /// An optional colored gradient to dim the underlying content for better contrast.
-    public var dimmingTintColor: UIColor? = dimmingTintColorDefault {
+    public var dimmingTintColor: UIColor? = .systemBackground {
         didSet {
             makeDimmingViewIfNeeded()
             dimmingView?.tintColor = dimmingTintColor
@@ -179,12 +177,6 @@ public class VariableBlurView: UIVisualEffectView {
 
     // Sets up (or tears down) an image view to display the dimming gradient as needed
     private func makeDimmingViewIfNeeded() {
-        guard let dimmingTintColor else {
-            dimmingView?.removeFromSuperview()
-            dimmingView = nil
-            return
-        }
-
         guard dimmingView == nil else {
             return
         }
@@ -240,6 +232,7 @@ public class VariableBlurView: UIVisualEffectView {
 
 // MARK: Image Reset
 
+@available(iOS 14, *)
 extension VariableBlurView {
     // Reset if a bounds change means we have to regenerate the images
     private func resetForBoundsChange(oldValue: CGRect) {
@@ -283,6 +276,7 @@ extension VariableBlurView {
 
 // MARK: Image Generation
 
+@available(iOS 14, *)
 extension VariableBlurView {
 
     private func generateImagesAsNeeded() {
@@ -334,13 +328,13 @@ extension VariableBlurView {
         let gradientPosition: (start: CIVector, end: CIVector) = {
             switch direction {
             case .down:
-                return (start: CIVector(x: 0.5, y: bounds.height - (bounds.height * startLocation)), end: CIVector(x: 0.5, y: 0.0))
+                return (start: CIVector(x: 0.5, y: size.height - (size.height * startLocation)), end: CIVector(x: 0.5, y: 0.0))
             case .up:
-                return (start: CIVector(x: 0.5, y: 0.0 + (bounds.height * startLocation)), end: CIVector(x: 0.5, y: bounds.height))
+                return (start: CIVector(x: 0.5, y: 0.0 + (size.height * startLocation)), end: CIVector(x: 0.5, y: size.height))
             case .left:
-                return (start: CIVector(x: bounds.width - (bounds.width * startLocation), y: 0.5), end: CIVector(x: 0.0, y: 0.5))
+                return (start: CIVector(x: size.width - (size.width * startLocation), y: 0.5), end: CIVector(x: 0.0, y: 0.5))
             case .right:
-                return (start: CIVector(x: 0.0 + (bounds.width * startLocation), y: 0.5), end: CIVector(x: bounds.width, y: 0.5))
+                return (start: CIVector(x: 0.0 + (size.width * startLocation), y: 0.5), end: CIVector(x: size.width, y: 0.5))
             }
         }()
 
@@ -369,9 +363,9 @@ extension VariableBlurView {
         guard let overshoot else { return value }
         switch overshoot {
         case .absolute(position: let position):
-            return value + position
+            return (value + position).rounded(.up)
         case .relative(fraction: let fraction):
-            return value + (value * fraction)
+            return (value + (value * fraction)).rounded(.up)
         }
     }
 }
