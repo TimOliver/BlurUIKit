@@ -137,6 +137,7 @@ public class VariableBlurView: UIVisualEffectView {
     public override func didMoveToSuperview() {
         super.didMoveToSuperview()
         configureView()
+        makeDimmingViewIfNeeded()
         updateBlurFilter()
     }
 
@@ -183,7 +184,9 @@ public class VariableBlurView: UIVisualEffectView {
             return
         }
 
-        guard dimmingView == nil else {
+        // Don't bother spinning up this view until we're added to a superview
+        // to save on the churn of setting a default value, and then promptly changing it.
+        guard superview != nil, dimmingView == nil else {
             return
         }
 
@@ -293,7 +296,7 @@ extension VariableBlurView {
         }
 
         // Update the dimming view image
-        if dimmingView?.image == nil {
+        if dimmingTintColor != nil, dimmingView?.image == nil {
             makeDimmingViewIfNeeded()
             if let dimmingImage = fetchGradientImage(startingInset: dimmingStartingInset,
                                                      smooth: true,
