@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name     = 'BlurUIKit'
-  s.version  = '1.2.1'
+  s.version  = '1.2.2'
   s.license  =  { :type => 'MIT', :file => 'LICENSE' }
   s.summary  = 'An App Store safe framework for tapping into more of the dynamic blur capabilities of UIKit.'
   s.homepage = 'https://github.com/TimOliver/BlurUIKit'
