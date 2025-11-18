@@ -177,6 +177,12 @@ public class VariableBlurView: UIVisualEffectView {
 
     // Sets up (or tears down) an image view to display the dimming gradient as needed
     private func makeDimmingViewIfNeeded() {
+        guard let dimmingTintColor else {
+            dimmingView?.removeFromSuperview()
+            dimmingView = nil
+            return
+        }
+
         guard dimmingView == nil else {
             return
         }
