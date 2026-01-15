@@ -38,7 +38,7 @@ public class VariableBlurView: UIVisualEffectView {
         case right  // Right. iPadOS sidebar in right-to-left locales
     }
 
-    /// An absolute or relative amount of sizing used to customize the appearence of the blur and gradient views.
+    /// An absolute or relative amount of sizing used to customize the appearance of the blur and gradient views.
     public enum GradientSizing {
         // The amount of on-screen UI points starting from the origin, as a static value.
         case absolute(position: CGFloat)
@@ -117,9 +117,14 @@ public class VariableBlurView: UIVisualEffectView {
         commonInit()
     }
 
-    public init(frame: CGRect) {
-        super.init(effect: UIBlurEffect(style: .regular))
+    public override init(effect: UIVisualEffect?) {
+        super.init(effect: effect)
         commonInit()
+    }
+
+    public convenience init(frame: CGRect) {
+        self.init(effect: UIBlurEffect(style: .regular))
+        self.frame = frame
     }
 
     required init?(coder: NSCoder) {
