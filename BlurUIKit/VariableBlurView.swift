@@ -305,14 +305,14 @@ extension VariableBlurView {
         // Update the dimming view image
         if dimmingTintColor != nil, dimmingView?.image == nil {
             makeDimmingViewIfNeeded()
-            if let dimmingImage = fetchGradientImage(startingInset: dimmingStartingInset, overshoot: dimmingOvershoot) {
+            if let dimmingImage = fetchGradientImage(startingInset: dimmingStartingInset, smooth: true, overshoot: dimmingOvershoot) {
                 dimmingView?.image = UIImage(cgImage: dimmingImage).withRenderingMode(.alwaysTemplate)
             }
         }
     }
 
     /// Generates a gradient bitmap to be used with the blur filter.
-    private func fetchGradientImage(startingInset: GradientSizing?, overshoot: GradientSizing? = nil) -> CGImage? {
+    private func fetchGradientImage(startingInset: GradientSizing?, smooth: Bool = false, overshoot: GradientSizing? = nil) -> CGImage? {
         // Skip if we're not sized yet.
         guard frame.size.width != 0.0, frame.size.height != 0.0 else { return nil }
 
@@ -339,12 +339,12 @@ extension VariableBlurView {
         // For up/right directions, the gradient runs in reverse (transparent to opaque)
         let reversed = direction == .up || direction == .right
 
-        // Render the gradient manually so we have ultimate control across all iOS versions
         return GradientImageRenderer.makeGradientImage(
             length: length,
             isVertical: isVertical,
             startLocation: startLocation,
-            reversed: reversed
+            reversed: reversed,
+            smooth: smooth
         )
     }
 
