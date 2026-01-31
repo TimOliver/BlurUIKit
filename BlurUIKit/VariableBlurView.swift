@@ -354,24 +354,24 @@ extension VariableBlurView {
             }
         }()
 
-        // Configure one color to be opaque and one to be clear
-        let startColor = CIColor(red: 0.0, green: 0.0, blue: 0.0, alpha: 1.0)
-        let endColor = CIColor(red: 0.0, green: 0.0, blue: 0.0, alpha: 0.0)
+        // On older versions of iOS, the gradient doesn't smoothly fade out by the very edge.
+        // To handle this, we hardcode an inset modifier based on the gradients size
+        let systemInset: CGFloat = {
+            if #available(iOS 17.0, *) { return 0.0 }
+            return 0.2
+        }()
+        let imageRenderer = UIGraphicsImageRenderer(size: size)
+        return imageRenderer.image { context in
+            let cgContext = context.cgContext
 
-        // Create a Core Image smooth linear gradient, since the classic Core Graphics gradient seems
-        // to have a much harsher starting line at the edge of the gradient
-        let filterName = smooth ? "CISmoothLinearGradient" : "CILinearGradient"
-        guard let gradientFilter = CIFilter(name: filterName) else { return nil }
-        gradientFilter.setDefaults()
-        gradientFilter.setValue(gradientPosition.start, forKey: "inputPoint0")
-        gradientFilter.setValue(gradientPosition.end, forKey: "inputPoint1")
-        gradientFilter.setValue(startColor, forKey: "inputColor0")
-        gradientFilter.setValue(endColor, forKey: "inputColor1")
+            // Configure one color to be opaque and one to be clear
+            let startColor = UIColor(red: 0.0, green: 0.0, blue: 0.0, alpha: 1.0)
+            let endColor = UIColor(red: 0.0, green: 0.0, blue: 0.0, alpha: 0.0)
+            let gradient = CGGradient(colorsSpace: nil, colors: [startColor.cgColor, endColor.cgColor] as CFArray, locations: [0, 1 - systemInset])!
 
-        // Render the image out as a CGImage
-        guard let gradientImage = gradientFilter.outputImage else { return nil }
-        return CIContext(options: [.useSoftwareRenderer: true])
-            .createCGImage(gradientImage, from: CGRect(origin: .zero, size: size))
+            // Render the gradient
+            cgContext.drawLinearGradient(gradient, start: gradientPosition.end.cgPointValue, end: gradientPosition.start.cgPointValue, options: [])
+        }.cgImage
     }
 
     // Apply an optional overshoot value to this image
