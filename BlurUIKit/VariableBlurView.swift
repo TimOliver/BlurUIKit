@@ -135,6 +135,7 @@ public class VariableBlurView: UIVisualEffectView {
     private func commonInit() {
         // Disable interaction so touches will pass through it
         isUserInteractionEnabled = false
+        clipsToBounds = false
     }
 
     // MARK: - View Lifecycle
@@ -198,6 +199,7 @@ public class VariableBlurView: UIVisualEffectView {
         let imageView = UIImageView()
         imageView.tintColor = dimmingTintColor
         contentView.addSubview(imageView)
+        contentView.clipsToBounds = false
 
         dimmingView = imageView
         setNeedsUpdate()
