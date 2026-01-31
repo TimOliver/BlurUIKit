@@ -28,19 +28,21 @@ import UIKit
 @available(iOS 14, *)
 internal enum GradientImageRenderer {
 
-    /// Generates a 1-pixel wide/tall gradient image with smooth alpha transitions.
+    /// Generates a 1-pixel wide/tall gradient image.
     /// - Parameters:
     ///   - length: The length of the gradient in pixels.
     ///   - isVertical: If true, creates a 1xN image; if false, creates an Nx1 image.
     ///   - startLocation: Normalized position (0.0-1.0) where the gradient transition begins.
     ///                    Pixels before this point will be fully opaque (or transparent if reversed).
     ///   - reversed: If false, gradient goes opaque→transparent. If true, transparent→opaque.
+    ///   - smooth: If true, applies sine-based easing for smooth transitions. If false, uses linear interpolation.
     /// - Returns: A CGImage containing the gradient, or nil if generation fails.
     static func makeGradientImage(
         length: Int,
         isVertical: Bool,
         startLocation: CGFloat = 0.0,
-        reversed: Bool = false
+        reversed: Bool = false,
+        smooth: Bool = false
     ) -> CGImage? {
         guard length > 0 else { return nil }
 
@@ -71,11 +73,11 @@ internal enum GradientImageRenderer {
                     adjustedPosition = (normalizedPosition - clampedStartLocation) / (1.0 - clampedStartLocation)
                 }
 
-                // Apply easing for smooth transition
-                let easedPosition = easeInOutSine(adjustedPosition)
+                // Apply easing for smooth transition, or use linear interpolation
+                let finalPosition = smooth ? easeInOutSine(adjustedPosition) : adjustedPosition
 
                 // Apply direction
-                return reversed ? easedPosition : 1.0 - easedPosition
+                return reversed ? finalPosition : 1.0 - finalPosition
             }()
 
             // Convert to 8-bit value and write pixel (RGBA - black with varying alpha)
