@@ -1,6 +1,6 @@
 //
 //  VariableBlurView.swift
-//  Copyright (c) 2024-2025 Tim Oliver
+//  Copyright (c) 2024-2026 Tim Oliver
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -21,7 +21,6 @@
 //  SOFTWARE.
 
 import UIKit
-import CoreImage
 
 /// A variant of UIVisualEffectView that provides a blur overlay view
 /// that gradually 'ramps' up in blur intensity from one edge to the other.
@@ -135,6 +134,7 @@ public class VariableBlurView: UIVisualEffectView {
     private func commonInit() {
         // Disable interaction so touches will pass through it
         isUserInteractionEnabled = false
+        backgroundColor = .clear
         clipsToBounds = false
     }
 
@@ -305,76 +305,50 @@ extension VariableBlurView {
         // Update the dimming view image
         if dimmingTintColor != nil, dimmingView?.image == nil {
             makeDimmingViewIfNeeded()
-            if let dimmingImage = fetchGradientImage(startingInset: dimmingStartingInset,
-                                                     smooth: true,
-                                                     overshoot: dimmingOvershoot) {
+            if let dimmingImage = fetchGradientImage(startingInset: dimmingStartingInset, smooth: true, overshoot: dimmingOvershoot) {
                 dimmingView?.image = UIImage(cgImage: dimmingImage).withRenderingMode(.alwaysTemplate)
             }
         }
     }
 
-    // Generates a gradient bitmap to be used with the blur filter
+    /// Generates a gradient bitmap to be used with the blur filter.
     private func fetchGradientImage(startingInset: GradientSizing?, smooth: Bool = false, overshoot: GradientSizing? = nil) -> CGImage? {
         // Skip if we're not sized yet.
         guard frame.size.width != 0.0, frame.size.height != 0.0 else { return nil }
 
-        // Generate the size, based on the current direction
-        let size: CGSize = {
-            switch direction {
-            case .up, .down:
-                return CGSize(width: 1.0, height: applyOvershoot(to: bounds.height, overshoot: overshoot))
-            case .left, .right:
-                return CGSize(width: applyOvershoot(to: bounds.width, overshoot: overshoot), height: 1.0)
-            }
+        // Determine size based on direction (1 pixel wide/tall strip)
+        let isVertical = direction == .up || direction == .down
+        let length: Int = {
+            let baseLength = isVertical ? bounds.height : bounds.width
+            return Int(applyOvershoot(to: baseLength, overshoot: overshoot).rounded(.up))
         }()
 
-        // Determine the start location if a setting was provided
+        guard length > 0 else { return nil }
+
+        // Determine the start location if a setting was provided (0.0 to 1.0)
         let startLocation: CGFloat = {
             guard let startingInset else { return 0.0 }
             switch startingInset {
-                case .absolute(let position):
-                return position / (size.width < size.height ? size.height : size.width)
-                case .relative(let fraction):
+            case .absolute(let position):
+                return position / CGFloat(length)
+            case .relative(let fraction):
                 return fraction
             }
         }()
 
-        // Determine which direction the gradient flows in
-        // (Core Image has its origin at the bottom of the bounds)
-        let gradientPosition: (start: CIVector, end: CIVector) = {
-            switch direction {
-            case .down:
-                return (start: CIVector(x: 0.5, y: size.height - (size.height * startLocation)), end: CIVector(x: 0.5, y: 0.0))
-            case .up:
-                return (start: CIVector(x: 0.5, y: 0.0 + (size.height * startLocation)), end: CIVector(x: 0.5, y: size.height))
-            case .left:
-                return (start: CIVector(x: size.width - (size.width * startLocation), y: 0.5), end: CIVector(x: 0.0, y: 0.5))
-            case .right:
-                return (start: CIVector(x: 0.0 + (size.width * startLocation), y: 0.5), end: CIVector(x: size.width, y: 0.5))
-            }
-        }()
+        // For up/right directions, the gradient runs in reverse (transparent to opaque)
+        let reversed = direction == .up || direction == .right
 
-        // Configure one color to be opaque and one to be clear
-        let startColor = CIColor(red: 0.0, green: 0.0, blue: 0.0, alpha: 1.0)
-        let endColor = CIColor(red: 0.0, green: 0.0, blue: 0.0, alpha: 0.0)
-
-        // Create a Core Image smooth linear gradient, since the classic Core Graphics gradient seems
-        // to have a much harsher starting line at the edge of the gradient
-        let filterName = smooth ? "CISmoothLinearGradient" : "CILinearGradient"
-        guard let gradientFilter = CIFilter(name: filterName) else { return nil }
-        gradientFilter.setDefaults()
-        gradientFilter.setValue(gradientPosition.start, forKey: "inputPoint0")
-        gradientFilter.setValue(gradientPosition.end, forKey: "inputPoint1")
-        gradientFilter.setValue(startColor, forKey: "inputColor0")
-        gradientFilter.setValue(endColor, forKey: "inputColor1")
-
-        // Render the image out as a CGImage
-        guard let gradientImage = gradientFilter.outputImage else { return nil }
-        return CIContext(options: [.useSoftwareRenderer: true])
-            .createCGImage(gradientImage, from: CGRect(origin: .zero, size: size))
+        return GradientImageRenderer.makeGradientImage(
+            length: length,
+            isVertical: isVertical,
+            startLocation: startLocation,
+            reversed: reversed,
+            smooth: smooth
+        )
     }
 
-    // Apply an optional overshoot value to this image
+    /// Apply an optional overshoot value to this dimension
     private func applyOvershoot(to value: CGFloat, overshoot: GradientSizing?) -> CGFloat {
         guard let overshoot else { return value }
         switch overshoot {
