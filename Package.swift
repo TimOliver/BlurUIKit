@@ -9,11 +9,21 @@ let package = Package(
             name: "BlurUIKit",
             targets: ["BlurUIKit"]
         ),
+        .library(
+            name: "BlurSwiftUI",
+            targets: ["BlurSwiftUI"]
+        ),
     ],
     targets: [
         .target(
             name: "BlurUIKit",
-            path: "BlurUIKit/"
-        )
+            path: "BlurUIKit/",
+            exclude: ["SwiftUI"]
+        ),
+        .target(
+            name: "BlurSwiftUI",
+            dependencies: ["BlurUIKit"],
+            path: "BlurUIKit/SwiftUI/"
+        ),
     ]
 )

@@ -21,6 +21,9 @@
 //  SOFTWARE.
 
 import SwiftUI
+#if canImport(BlurUIKit)
+import BlurUIKit
+#endif
 
 /// A SwiftUI wrapper for ``VariableBlurView`` that provides a blur overlay whose intensity
 /// gradually ramps from one edge to the other. This is useful for softly separating layers of
