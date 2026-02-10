@@ -46,10 +46,10 @@ internal enum GradientImageRenderer {
     ) -> CGImage? {
         guard length > 0 else { return nil }
 
-        // Create pixel data - RGBA format
+        // Create pixel data - Grayscale + Alpha format
         let width = isVertical ? 1 : length
         let height = isVertical ? length : 1
-        let bytesPerPixel = 4
+        let bytesPerPixel = 2
         let bytesPerRow = width * bytesPerPixel
         var pixelData = [UInt8](repeating: 0, count: width * height * bytesPerPixel)
 
@@ -80,17 +80,12 @@ internal enum GradientImageRenderer {
                 return reversed ? finalPosition : 1.0 - finalPosition
             }()
 
-            // Convert to 8-bit value and write pixel (RGBA - black with varying alpha)
-            let alphaValue = UInt8(min(max(alpha * 255.0, 0.0), 255.0))
-            let pixelIndex = i * bytesPerPixel
-            pixelData[pixelIndex] = 0               // R
-            pixelData[pixelIndex + 1] = 0           // G
-            pixelData[pixelIndex + 2] = 0           // B
-            pixelData[pixelIndex + 3] = alphaValue  // A
+            // Write alpha value (gray is already 0 from initialization)
+            pixelData[i * bytesPerPixel + 1] = UInt8(min(max(alpha * 255.0, 0.0), 255.0))
         }
 
         // Create CGImage from pixel data
-        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        let colorSpace = CGColorSpaceCreateDeviceGray()
         let bitmapInfo = CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue)
 
         guard let provider = CGDataProvider(data: Data(pixelData) as CFData),
@@ -98,7 +93,7 @@ internal enum GradientImageRenderer {
                 width: width,
                 height: height,
                 bitsPerComponent: 8,
-                bitsPerPixel: 32,
+                bitsPerPixel: 16,
                 bytesPerRow: bytesPerRow,
                 space: colorSpace,
                 bitmapInfo: bitmapInfo,
