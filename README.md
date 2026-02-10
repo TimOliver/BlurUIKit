@@ -18,10 +18,13 @@ _As of iOS 26, [this is now a public API](https://developer.apple.com/documentat
 * Allows an optional 'dimming' colored gradient to add additional contrast when needed.
 * Dimming and blur gradients can be configured independently.
 * Highly optimized to avoid regenerating gradient mask images unless needed.
+* SwiftUI support via the `VariableBlur` view wrapper.
 
 # Examples
 
 `BlurUIKit` features a default configuration ready to use, but can be further modified depending on your app's needs.
+
+### UIKit
 
 ```swift
 
@@ -35,6 +38,19 @@ blurView.dimmingTintColor = .red
 blurView.dimmingOvershoot = .relative(fraction: 0.25)
 
 ```
+
+### SwiftUI
+
+```swift
+
+// Use the VariableBlur view with chainable modifiers
+VariableBlur(direction: .down)
+    .dimmingTintColor(.red)
+    .dimmingOvershoot(.relative(fraction: 0.25))
+
+```
+
+### UIView Blur Extension
 
 Another feature of `BlurUIKit` is being able to apply gaussian blur to `UIView` instances.
 
@@ -64,8 +80,12 @@ Copy the contents of the `BlurUIKit` folder to your app's project folder.
 <details>
   <summary><strong>CocoaPods</strong></summary>
 
-```
+```ruby
+# UIKit only (default)
 pod 'BlurUIKit'
+
+# Include SwiftUI support
+pod 'BlurUIKit/SwiftUI'
 ```
 </details>
 
@@ -78,6 +98,15 @@ dependencies: [
   // ...
   .package(url: "https://github.com/TimOliver/BlurUIKit.git"),
 ],
+```
+
+Then add the target dependency you need:
+``` swift
+// UIKit only
+.product(name: "BlurUIKit", package: "BlurUIKit")
+
+// SwiftUI support
+.product(name: "BlurSwiftUI", package: "BlurUIKit")
 ```
 </details>
 
