@@ -22,12 +22,12 @@
 
 import UIKit
 
-/// A variant of UIVisualEffectView that provides a blur overlay view
-/// that gradually 'ramps' up in blur intensity from one edge to the other.
+/// A UIView that contains a blur overlay that gradually 'ramps' up
+/// in blur intensity from one edge to the other.
 /// This is great for separating separate layers of content (such as the iOS status bar)
 /// without any hard border lines.
 @available(iOS 14, *)
-public class VariableBlurView: UIVisualEffectView {
+public class VariableBlurView: UIView {
 
     /// The possible directions that the gradient of this blur view may flow in.
     public enum Direction {
@@ -97,6 +97,9 @@ public class VariableBlurView: UIVisualEffectView {
         didSet { resetForBoundsChange(oldValue: oldValue) }
     }
 
+    /// The internal visual effect view that provides the blur
+    private let blurEffectView = UIVisualEffectView(effect: UIBlurEffect(style: .regular))
+
     /// The variable blur view filter
     private let variableBlurFilter = BlurFilterProvider.blurFilter(named: "variableBlur")
 
@@ -115,23 +118,13 @@ public class VariableBlurView: UIVisualEffectView {
 
     // MARK: - Initialization
 
-    public init() {
-        super.init(effect: UIBlurEffect(style: .regular))
+    public override init(frame: CGRect) {
+        super.init(frame: frame)
         commonInit()
-    }
-
-    public override init(effect: UIVisualEffect?) {
-        super.init(effect: effect)
-        commonInit()
-    }
-
-    public convenience init(frame: CGRect) {
-        self.init(effect: UIBlurEffect(style: .regular))
-        self.frame = frame
     }
 
     required init?(coder: NSCoder) {
-        super.init(effect: UIBlurEffect(style: .regular))
+        super.init(coder: coder)
         commonInit()
     }
 
@@ -140,6 +133,9 @@ public class VariableBlurView: UIVisualEffectView {
         isUserInteractionEnabled = false
         backgroundColor = .clear
         clipsToBounds = false
+
+        // Add the visual effect view as a subview
+        addSubview(blurEffectView)
 
         // On iOS 17+, use the modern trait change registration
         if #available(iOS 17, *) {
@@ -162,6 +158,7 @@ public class VariableBlurView: UIVisualEffectView {
     public override func layoutSubviews() {
         super.layoutSubviews()
 
+        blurEffectView.frame = bounds
         dimmingView?.frame = dimmingViewFrame()
         updateDimmingViewAlpha()
 
@@ -188,13 +185,13 @@ public class VariableBlurView: UIVisualEffectView {
         // Find the overlay view (The one that lightens or darkens these blur views) and hide it.
         // Weak references are used so the search is re-triggered if subviews are rebuilt.
         if overlayView == nil {
-            overlayView = BlurFilterProvider.findSubview(in: self, containing: "subview")
+            overlayView = BlurFilterProvider.findSubview(in: blurEffectView, containing: "subview")
         }
         overlayView?.isHidden = true
 
         // Find the backdrop view (The one that repeats the content drawn behind it) and apply the blur filter.
         if backdropView == nil {
-            backdropView = BlurFilterProvider.findSubview(in: self, containing: "backdrop")
+            backdropView = BlurFilterProvider.findSubview(in: blurEffectView, containing: "backdrop")
         }
         backdropView?.layer.filters = [variableBlurFilter]
         backdropView?.layer.setValue(0.75, forKey: "scale")
@@ -216,8 +213,7 @@ public class VariableBlurView: UIVisualEffectView {
 
         let imageView = UIImageView()
         imageView.tintColor = dimmingTintColor
-        contentView.addSubview(imageView)
-        contentView.clipsToBounds = false
+        addSubview(imageView)
 
         dimmingView = imageView
         setNeedsUpdate()
