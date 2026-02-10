@@ -185,13 +185,13 @@ public class VariableBlurView: UIView {
         // Find the overlay view (The one that lightens or darkens these blur views) and hide it.
         // Weak references are used so the search is re-triggered if subviews are rebuilt.
         if overlayView == nil {
-            overlayView = BlurFilterProvider.findSubview(in: self, containing: "subview")
+            overlayView = BlurFilterProvider.findSubview(in: blurEffectView, containing: "subview")
         }
         overlayView?.isHidden = true
 
         // Find the backdrop view (The one that repeats the content drawn behind it) and apply the blur filter.
         if backdropView == nil {
-            backdropView = BlurFilterProvider.findSubview(in: self, containing: "backdrop")
+            backdropView = BlurFilterProvider.findSubview(in: blurEffectView, containing: "backdrop")
         }
         backdropView?.layer.filters = [variableBlurFilter]
         backdropView?.layer.setValue(0.75, forKey: "scale")
