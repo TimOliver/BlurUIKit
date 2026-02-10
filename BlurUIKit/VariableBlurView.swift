@@ -109,6 +109,10 @@ public class VariableBlurView: UIVisualEffectView {
     /// An optional dimming gradient shown along with the blur view
     private var dimmingView: UIImageView?
 
+    /// Cached references to internal UIVisualEffectView subviews
+    private weak var backdropView: UIView?
+    private weak var overlayView: UIView?
+
     // MARK: - Initialization
 
     public init() {
@@ -136,6 +140,14 @@ public class VariableBlurView: UIVisualEffectView {
         isUserInteractionEnabled = false
         backgroundColor = .clear
         clipsToBounds = false
+
+        // On iOS 17+, use the modern trait change registration
+        if #available(iOS 17, *) {
+            registerForTraitChanges([UITraitUserInterfaceStyle.self]) { (self: VariableBlurView, _: UITraitCollection) in
+                self.configureView()
+                self.updateDimmingViewAlpha()
+            }
+        }
     }
 
     // MARK: - View Lifecycle
@@ -149,7 +161,6 @@ public class VariableBlurView: UIVisualEffectView {
 
     public override func layoutSubviews() {
         super.layoutSubviews()
-        updateBlurFilter()
 
         dimmingView?.frame = dimmingViewFrame()
         updateDimmingViewAlpha()
@@ -161,9 +172,11 @@ public class VariableBlurView: UIVisualEffectView {
 
     public override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
-        configureView()
-        updateBlurFilter()
-        updateDimmingViewAlpha()
+        // On iOS 17+, trait changes are handled via registerForTraitChanges in commonInit()
+        if #unavailable(iOS 17) {
+            configureView()
+            updateDimmingViewAlpha()
+        }
     }
 
     // MARK: - Private
@@ -173,13 +186,18 @@ public class VariableBlurView: UIVisualEffectView {
         guard superview != nil, let variableBlurFilter else { return }
 
         // Find the overlay view (The one that lightens or darkens these blur views) and hide it.
-        BlurFilterProvider.findSubview(in: self, containing: "subview")?.isHidden = true
+        // Weak references are used so the search is re-triggered if subviews are rebuilt.
+        if overlayView == nil {
+            overlayView = BlurFilterProvider.findSubview(in: self, containing: "subview")
+        }
+        overlayView?.isHidden = true
 
         // Find the backdrop view (The one that repeats the content drawn behind it) and apply the blur filter.
-        if let backdropView = BlurFilterProvider.findSubview(in: self, containing: "backdrop") {
-            backdropView.layer.filters = [variableBlurFilter]
-            backdropView.layer.setValue(0.75, forKey: "scale")
+        if backdropView == nil {
+            backdropView = BlurFilterProvider.findSubview(in: self, containing: "backdrop")
         }
+        backdropView?.layer.filters = [variableBlurFilter]
+        backdropView?.layer.setValue(0.75, forKey: "scale")
     }
 
     // Sets up (or tears down) an image view to display the dimming gradient as needed

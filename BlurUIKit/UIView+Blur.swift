@@ -36,15 +36,11 @@ extension UIView {
 
         set {
             // We can't update the radius of an existing object,
-            // so copy and create a fresh object from it.
-            var newFilter: NSObject?
+            // so remove the old one and create a fresh replacement.
             if let filter = self.blurFilter {
                 self.layer.filters?.removeAll { ($0 as? NSObject) == filter }
-                newFilter = BlurFilterProvider.blurFilterCopy(from: filter, named: "gaussianBlur")
-            } else {
-                newFilter = BlurFilterProvider.blurFilter(named: "gaussianBlur")
             }
-            guard let newFilter else { return }
+            guard let newFilter = BlurFilterProvider.blurFilter(named: "gaussianBlur") else { return }
             newFilter.setValue(newValue, forKey: "inputRadius")
             self.layer.filters = (self.layer.filters ?? []) + [newFilter]
             self.blurFilter = newFilter

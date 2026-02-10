@@ -27,36 +27,32 @@ import UIKit
 @available(iOS 14, *)
 @MainActor internal class BlurFilterProvider {
 
-    // A shared blur visual effect view that is used to hook and extract a reference to the CAFilter class
-    static let blurView = UIVisualEffectView(effect: UIBlurEffect(style: .regular))
+    /// The CAFilter class, extracted once from a temporary UIVisualEffectView.
+    /// The view is only kept alive during initialization and is not retained.
+    private static let filterClass: AnyClass? = {
+        let blurView = UIVisualEffectView(effect: UIBlurEffect(style: .regular))
+        guard let backdropView = findSubview(in: blurView, containing: "backdrop"),
+              let filter = backdropView.layer.filters?.first as? NSObject else {
+            return nil
+        }
+        return type(of: filter)
+    }()
+
+    /// The selector for '+[CAFilter filterWithType:]', resolved once.
+    /// This ensures that even if Apple changes it, we can fail gracefully.
+    private static let filterSelector: Selector? = {
+        let selectorName = ["Type:", "With", "filter"].reversed().joined()
+        let selector = NSSelectorFromString(selectorName)
+        guard let filterClass, filterClass.responds(to: selector) else { return nil }
+        return selector
+    }()
 
     /// Vends a newly instantiated CAFilter instance with the provided filter name
     /// - Parameter name: The name of the filter that this filter will be instantiated with.
     /// - Returns: The new CAFilter object, or nil if the filter if it couldn't be created.
     static func blurFilter(named name: String) -> NSObject? {
-        // Fetch a known CAFilter-backed subview from out of the shared blur view so we can access that class.
-        guard let backdropView = findSubview(in: blurView, containing: "backdrop"),
-              let filter = backdropView.layer.filters?.first as? NSObject else {
-            return nil
-        }
-        return blurFilterCopy(from: filter, named: name)
-    }
-
-    /// With an already instantiated CAFilter object as the base, create a completely new instance with the specified filter type.
-    /// - Parameters:
-    ///   - filter: The existing filter to use as a base
-    ///   - name: The name of the filter that this filter will be instantiated with.
-    /// - Returns: The new CAFilter object, or nil if the filter if it couldn't be created.
-    static func blurFilterCopy(from filter: NSObject, named name: String) -> NSObject? {
-        // Confirm this object implements the method name we need.
-        // This ensures that even if Apple changes it, we can fail gracefully.
-        // The only private method we need to call is '+[CAFilter filterWithType:]'
-        let selectorName = ["Type:", "With", "filter"].reversed().joined()
-        let selector = NSSelectorFromString(selectorName)
-
-        let type = type(of: filter)
-        guard type.responds(to: selector) else { return nil }
-        return type.perform(selector, with: name).takeUnretainedValue() as? NSObject
+        guard let filterClass, let filterSelector else { return nil }
+        return (filterClass as AnyObject).perform(filterSelector, with: name)?.takeUnretainedValue() as? NSObject
     }
 
     /// Loop through a view's subviews and find the one with its class name containing the provided string
@@ -64,6 +60,7 @@ import UIKit
     /// - Parameter name: The portion of the name of the subiew to find.
     /// - Returns: The subview if it is found, or nil otherwise.
     static func findSubview(in view: UIView, containing name: String) -> UIView? {
-        view.subviews.first { String(describing: $0).lowercased().contains(name.lowercased()) }
+        let lowercasedName = name.lowercased()
+        return view.subviews.first { NSStringFromClass(type(of: $0)).lowercased().contains(lowercasedName) }
     }
 }

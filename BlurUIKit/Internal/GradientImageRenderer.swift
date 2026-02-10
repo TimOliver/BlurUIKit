@@ -22,13 +22,18 @@
 
 import UIKit
 
-/// An internal class that generates gradient images pixel-by-pixel with eased
+/// An internal enum that generates gradient images pixel-by-pixel with eased
 /// alpha transitions. This approach ensures smooth gradients across all iOS versions,
 /// avoiding the hard edge artifacts present in CGGradient on iOS 16 and earlier.
 @available(iOS 14, *)
 internal enum GradientImageRenderer {
 
-    /// Generates a 1-pixel wide/tall gradient image.
+    /// A shared cache that allows multiple blur views to re-use the same gradient image
+    private static let cache = NSCache<CacheKey, CGImage>()
+
+    // MARK: - Image Generation
+
+    /// Generates a 1-pixel wide/tall gradient image, returning a cached copy when available.
     /// - Parameters:
     ///   - length: The length of the gradient in pixels.
     ///   - isVertical: If true, creates a 1xN image; if false, creates an Nx1 image.
@@ -46,12 +51,28 @@ internal enum GradientImageRenderer {
     ) -> CGImage? {
         guard length > 0 else { return nil }
 
-        // Create pixel data - RGBA format
+        // Check for a cached image matching these parameters
+        let key = CacheKey(length: length, isVertical: isVertical, startLocation: startLocation, reversed: reversed, smooth: smooth)
+        if let cached = cache.object(forKey: key) {
+            return cached
+        }
+
+        // Create a grayscale + alpha bitmap context
         let width = isVertical ? 1 : length
         let height = isVertical ? length : 1
-        let bytesPerPixel = 4
-        let bytesPerRow = width * bytesPerPixel
-        var pixelData = [UInt8](repeating: 0, count: width * height * bytesPerPixel)
+        let bytesPerPixel = 2
+
+        guard let context = CGContext(
+            data: nil,
+            width: width,
+            height: height,
+            bitsPerComponent: 8,
+            bytesPerRow: width * bytesPerPixel,
+            space: colorSpace,
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ), let buffer = context.data else { return nil }
+
+        let pixels = buffer.assumingMemoryBound(to: UInt8.self)
 
         // Clamp startLocation to valid range
         let clampedStartLocation = min(max(startLocation, 0.0), 1.0)
@@ -80,41 +101,59 @@ internal enum GradientImageRenderer {
                 return reversed ? finalPosition : 1.0 - finalPosition
             }()
 
-            // Convert to 8-bit value and write pixel (RGBA - black with varying alpha)
-            let alphaValue = UInt8(min(max(alpha * 255.0, 0.0), 255.0))
+            // Write gray (0) and alpha values
             let pixelIndex = i * bytesPerPixel
-            pixelData[pixelIndex] = 0               // R
-            pixelData[pixelIndex + 1] = 0           // G
-            pixelData[pixelIndex + 2] = 0           // B
-            pixelData[pixelIndex + 3] = alphaValue  // A
+            pixels[pixelIndex] = 0
+            pixels[pixelIndex + 1] = UInt8(min(max(alpha * 255.0, 0.0), 255.0))
         }
 
-        // Create CGImage from pixel data
-        let colorSpace = CGColorSpaceCreateDeviceRGB()
-        let bitmapInfo = CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue)
-
-        guard let provider = CGDataProvider(data: Data(pixelData) as CFData),
-              let cgImage = CGImage(
-                width: width,
-                height: height,
-                bitsPerComponent: 8,
-                bitsPerPixel: 32,
-                bytesPerRow: bytesPerRow,
-                space: colorSpace,
-                bitmapInfo: bitmapInfo,
-                provider: provider,
-                decode: nil,
-                shouldInterpolate: true,
-                intent: .defaultIntent
-              ) else {
-            return nil
-        }
-
-        return cgImage
+        guard let image = context.makeImage() else { return nil }
+        cache.setObject(image, forKey: key)
+        return image
     }
 
     /// Sine-based ease-in-out function for smooth gradient transitions.
     private static func easeInOutSine(_ t: CGFloat) -> CGFloat {
         -(cos(.pi * t) - 1.0) / 2.0
+    }
+
+    /// Shared color space for gradient image generation.
+    private static let colorSpace = CGColorSpaceCreateDeviceGray()
+
+    /// A class that wraps all of the properties of a gradient image
+    /// into a hashable cache key value.
+    private class CacheKey: NSObject {
+        let length: Int
+        let isVertical: Bool
+        let startLocation: CGFloat
+        let reversed: Bool
+        let smooth: Bool
+
+        init(length: Int, isVertical: Bool, startLocation: CGFloat, reversed: Bool, smooth: Bool) {
+            self.length = length
+            self.isVertical = isVertical
+            self.startLocation = startLocation
+            self.reversed = reversed
+            self.smooth = smooth
+        }
+
+        override var hash: Int {
+            var hasher = Hasher()
+            hasher.combine(length)
+            hasher.combine(isVertical)
+            hasher.combine(startLocation)
+            hasher.combine(reversed)
+            hasher.combine(smooth)
+            return hasher.finalize()
+        }
+
+        override func isEqual(_ object: Any?) -> Bool {
+            guard let other = object as? CacheKey else { return false }
+            return length == other.length
+                && isVertical == other.isVertical
+                && startLocation == other.startLocation
+                && reversed == other.reversed
+                && smooth == other.smooth
+        }
     }
 }

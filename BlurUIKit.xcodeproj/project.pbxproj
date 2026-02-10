@@ -13,11 +13,11 @@
 		229642D22C1E8769003C04C5 /* Base in Resources */ = {isa = PBXBuildFile; fileRef = 229642D12C1E8769003C04C5 /* Base */; };
 		229642DB2C1E8A3F003C04C5 /* VariableBlurView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 229642DA2C1E8A3F003C04C5 /* VariableBlurView.swift */; };
 		229642DF2C1E91F7003C04C5 /* BlurFilterProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 229642DE2C1E91F7003C04C5 /* BlurFilterProvider.swift */; };
-		22GRAD012E3D000000000001 /* GradientImageRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22GRAD002E3D000000000000 /* GradientImageRenderer.swift */; };
 		22D5CBC72CAAF0DE007320EE /* PhotosViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22D5CBC62CAAF0DE007320EE /* PhotosViewController.swift */; };
 		22F7A97D2E12E3A300FC5943 /* UIView+Blur.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22F7A97C2E12E39E00FC5943 /* UIView+Blur.swift */; };
 		22F7A97F2E12E67900FC5943 /* BlurViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22F7A97E2E12E67800FC5943 /* BlurViewController.swift */; };
 		22F9D8652D160890007E1386 /* PhotosViewCollectionCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22F9D8642D160890007E1386 /* PhotosViewCollectionCell.swift */; };
+		22GRAD012E3D000000000001 /* GradientImageRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22GRAD002E3D000000000000 /* GradientImageRenderer.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -31,13 +31,13 @@
 		229642D32C1E8769003C04C5 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		229642DA2C1E8A3F003C04C5 /* VariableBlurView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VariableBlurView.swift; sourceTree = "<group>"; };
 		229642DE2C1E91F7003C04C5 /* BlurFilterProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlurFilterProvider.swift; sourceTree = "<group>"; };
-		22GRAD002E3D000000000000 /* GradientImageRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GradientImageRenderer.swift; sourceTree = "<group>"; };
 		22D5CBC62CAAF0DE007320EE /* PhotosViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotosViewController.swift; sourceTree = "<group>"; };
 		22F7A97C2E12E39E00FC5943 /* UIView+Blur.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIView+Blur.swift"; sourceTree = "<group>"; };
 		22F7A97E2E12E67800FC5943 /* BlurViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlurViewController.swift; sourceTree = "<group>"; };
 		22F9D8642D160890007E1386 /* PhotosViewCollectionCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotosViewCollectionCell.swift; sourceTree = "<group>"; };
 		22F9D8662D162106007E1386 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
 		22F9D8672D162106007E1386 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		22GRAD002E3D000000000000 /* GradientImageRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GradientImageRenderer.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -134,7 +134,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1540;
-				LastUpgradeCheck = 1540;
+				LastUpgradeCheck = 2630;
 				TargetAttributes = {
 					229642C12C1E8768003C04C5 = {
 						CreatedOnToolsVersion = 15.4;
@@ -237,6 +237,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 6LF3GMKZAB;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -260,6 +261,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -300,6 +302,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 6LF3GMKZAB;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -316,6 +319,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				VALIDATE_PRODUCT = YES;
 			};
@@ -328,7 +332,6 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 6LF3GMKZAB;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = BlurUIKitExample/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -356,7 +359,6 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 6LF3GMKZAB;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = BlurUIKitExample/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
