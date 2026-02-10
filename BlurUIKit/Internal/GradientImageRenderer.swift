@@ -52,7 +52,11 @@ internal enum GradientImageRenderer {
         guard length > 0 else { return nil }
 
         // Check for a cached image matching these parameters
-        let key = CacheKey(length: length, isVertical: isVertical, startLocation: startLocation, reversed: reversed, smooth: smooth)
+        let key = CacheKey(length: length,
+                           isVertical: isVertical,
+                           startLocation: startLocation,
+                           reversed: reversed,
+                           smooth: smooth)
         if let cached = cache.object(forKey: key) {
             return cached
         }
