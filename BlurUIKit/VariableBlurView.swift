@@ -140,6 +140,14 @@ public class VariableBlurView: UIVisualEffectView {
         isUserInteractionEnabled = false
         backgroundColor = .clear
         clipsToBounds = false
+
+        // On iOS 17+, use the modern trait change registration
+        if #available(iOS 17, *) {
+            registerForTraitChanges([UITraitUserInterfaceStyle.self]) { (self: VariableBlurView, _: UITraitCollection) in
+                self.configureView()
+                self.updateDimmingViewAlpha()
+            }
+        }
     }
 
     // MARK: - View Lifecycle
@@ -164,8 +172,11 @@ public class VariableBlurView: UIVisualEffectView {
 
     public override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
-        configureView()
-        updateDimmingViewAlpha()
+        // On iOS 17+, trait changes are handled via registerForTraitChanges in commonInit()
+        if #unavailable(iOS 17) {
+            configureView()
+            updateDimmingViewAlpha()
+        }
     }
 
     // MARK: - Private

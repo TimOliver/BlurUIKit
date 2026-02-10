@@ -46,12 +46,22 @@ internal enum GradientImageRenderer {
     ) -> CGImage? {
         guard length > 0 else { return nil }
 
-        // Create pixel data - Grayscale + Alpha format
+        // Create a grayscale + alpha bitmap context
         let width = isVertical ? 1 : length
         let height = isVertical ? length : 1
         let bytesPerPixel = 2
-        let bytesPerRow = width * bytesPerPixel
-        var pixelData = [UInt8](repeating: 0, count: width * height * bytesPerPixel)
+
+        guard let context = CGContext(
+            data: nil,
+            width: width,
+            height: height,
+            bitsPerComponent: 8,
+            bytesPerRow: width * bytesPerPixel,
+            space: colorSpace,
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ), let buffer = context.data else { return nil }
+
+        let pixels = buffer.assumingMemoryBound(to: UInt8.self)
 
         // Clamp startLocation to valid range
         let clampedStartLocation = min(max(startLocation, 0.0), 1.0)
@@ -80,36 +90,20 @@ internal enum GradientImageRenderer {
                 return reversed ? finalPosition : 1.0 - finalPosition
             }()
 
-            // Write alpha value (gray is already 0 from initialization)
-            pixelData[i * bytesPerPixel + 1] = UInt8(min(max(alpha * 255.0, 0.0), 255.0))
+            // Write gray (0) and alpha values
+            let pixelIndex = i * bytesPerPixel
+            pixels[pixelIndex] = 0
+            pixels[pixelIndex + 1] = UInt8(min(max(alpha * 255.0, 0.0), 255.0))
         }
 
-        // Create CGImage from pixel data
-        let colorSpace = CGColorSpaceCreateDeviceGray()
-        let bitmapInfo = CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue)
-
-        guard let provider = CGDataProvider(data: Data(pixelData) as CFData),
-              let cgImage = CGImage(
-                width: width,
-                height: height,
-                bitsPerComponent: 8,
-                bitsPerPixel: 16,
-                bytesPerRow: bytesPerRow,
-                space: colorSpace,
-                bitmapInfo: bitmapInfo,
-                provider: provider,
-                decode: nil,
-                shouldInterpolate: true,
-                intent: .defaultIntent
-              ) else {
-            return nil
-        }
-
-        return cgImage
+        return context.makeImage()
     }
 
     /// Sine-based ease-in-out function for smooth gradient transitions.
     private static func easeInOutSine(_ t: CGFloat) -> CGFloat {
         -(cos(.pi * t) - 1.0) / 2.0
     }
+
+    /// Shared color space for gradient image generation.
+    private static let colorSpace = CGColorSpaceCreateDeviceGray()
 }
