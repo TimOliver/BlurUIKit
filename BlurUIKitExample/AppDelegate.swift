@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import SwiftUI
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -21,7 +22,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         let tabBarController = UITabBarController()
         tabBarController.tabBar.standardAppearance = tabBarAppearance
         tabBarController.tabBar.scrollEdgeAppearance = tabBarAppearance
-        tabBarController.viewControllers = [PhotosViewController(), MapViewController(), BlurViewController()]
+        tabBarController.viewControllers = [PhotosViewController(), MapViewController(), BlurViewController(), swiftUIController()]
 
         window = UIWindow(frame: UIScreen.main.bounds)
         window?.rootViewController = tabBarController
@@ -30,5 +31,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         return true
     }
 
+    func swiftUIController() -> UIHostingController<SwiftUIExampleView> {
+        let viewController = UIHostingController(rootView: SwiftUIExampleView())
+        viewController.tabBarItem = UITabBarItem(title: "SwiftUI",
+                                                    image: UIImage(systemName: "swift"),
+                                                    selectedImage: UIImage(systemName: "swift"))
+        return viewController
+    }
 }
 

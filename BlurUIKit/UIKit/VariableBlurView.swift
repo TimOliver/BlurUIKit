@@ -100,9 +100,6 @@ public class VariableBlurView: UIView {
     /// The internal visual effect view that provides the blur
     private let blurEffectView = UIVisualEffectView(effect: UIBlurEffect(style: .regular))
 
-    /// The variable blur view filter
-    private let variableBlurFilter = BlurFilterProvider.blurFilter(named: "variableBlur")
-
     /// The current image being used as the gradient mask
     private var gradientMaskImage: CGImage?
 
@@ -159,6 +156,8 @@ public class VariableBlurView: UIView {
         super.layoutSubviews()
 
         blurEffectView.frame = bounds
+        updateBlurFilter()
+
         dimmingView?.frame = dimmingViewFrame()
         updateDimmingViewAlpha()
 
@@ -178,23 +177,20 @@ public class VariableBlurView: UIView {
 
     // MARK: - Private
 
-    // One-time setup logic to configure the blur view with our filters
+    // Configure the blur view by finding internal subviews and applying a fresh blur filter.
+    // Subviews are always re-looked-up and a new filter is always created because
+    // UIVisualEffectView rebuilds its subview hierarchy on trait changes.
     private func configureView() {
-        guard superview != nil, let variableBlurFilter else { return }
+        guard superview != nil else { return }
 
         // Find the overlay view (The one that lightens or darkens these blur views) and hide it.
-        // Weak references are used so the search is re-triggered if subviews are rebuilt.
         if overlayView == nil {
             overlayView = BlurFilterProvider.findSubview(in: blurEffectView, containing: "subview")
         }
         overlayView?.isHidden = true
 
-        // Find the backdrop view (The one that repeats the content drawn behind it) and apply the blur filter.
-        if backdropView == nil {
-            backdropView = BlurFilterProvider.findSubview(in: blurEffectView, containing: "backdrop")
-        }
-        backdropView?.layer.filters = [variableBlurFilter]
-        backdropView?.layer.setValue(0.75, forKey: "scale")
+        // Create a fresh filter and apply it to the backdrop view
+        updateBlurFilter()
     }
 
     // Sets up (or tears down) an image view to display the dimming gradient as needed
@@ -221,9 +217,16 @@ public class VariableBlurView: UIView {
 
     // Update the parameters of the blur filter when the state in this view changes
     private func updateBlurFilter() {
-        variableBlurFilter?.setValue(gradientMaskImage, forKey: "inputMaskImage")
-        variableBlurFilter?.setValue(maximumBlurRadius, forKey: "inputRadius")
-        variableBlurFilter?.setValue(true, forKey: "inputNormalizeEdges")
+        guard let variableBlurFilter = BlurFilterProvider.blurFilter(named: "variableBlur") else { return }
+        variableBlurFilter.setValue(gradientMaskImage, forKey: "inputMaskImage")
+        variableBlurFilter.setValue(maximumBlurRadius, forKey: "inputRadius")
+        variableBlurFilter.setValue(true, forKey: "inputNormalizeEdges")
+
+        if backdropView == nil {
+            backdropView = BlurFilterProvider.findSubview(in: blurEffectView, containing: "backdrop")
+        }
+        backdropView?.layer.filters = [variableBlurFilter]
+        backdropView?.layer.setValue(0.75, forKey: "scale")
     }
 
     // Update the alpha value of the colored gradient as needed
