@@ -21,7 +21,7 @@
 //  SOFTWARE.
 
 import SwiftUI
-#if canImport(BlurUIKit)
+#if canImport(BlurSwiftUI)
 import BlurUIKit
 #endif
 

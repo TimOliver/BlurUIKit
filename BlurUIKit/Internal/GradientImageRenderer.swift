@@ -26,7 +26,7 @@ import UIKit
 /// alpha transitions. This approach ensures smooth gradients across all iOS versions,
 /// avoiding the hard edge artifacts present in CGGradient on iOS 16 and earlier.
 @available(iOS 14, *)
-internal enum GradientImageRenderer {
+@MainActor internal enum GradientImageRenderer {
 
     /// A shared cache that allows multiple blur views to re-use the same gradient image
     private static let cache = NSCache<CacheKey, CGImage>()
