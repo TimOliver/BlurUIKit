@@ -41,7 +41,7 @@ public class VariableBlurView: UIView {
     public enum GradientSizing {
         // The amount of on-screen UI points starting from the origin, as a static value.
         case absolute(position: CGFloat)
-        // A value between 0.0 and 1.0 relative to the size of the view. A value of 0.5 would be half the size of this view.
+        // A relative fraction of this view's size along the gradient direction. (0.0 = 0%, 1.5 = 150%)
         case relative(fraction: CGFloat)
     }
 
@@ -83,7 +83,7 @@ public class VariableBlurView: UIView {
     }
 
     /// An optional overshoot value to allow the colored gradient to extend outside the blur view's bounds
-    public var dimmingOvershoot: GradientSizing? = .relative(fraction: 0.25) {
+    public var dimmingOvershoot: GradientSizing? = .relative(fraction: 1.25) {
         didSet { resetDimmingImage() }
     }
 
@@ -372,7 +372,7 @@ extension VariableBlurView {
         case .absolute(position: let position):
             return (value + position).rounded(.up)
         case .relative(fraction: let fraction):
-            return (value + (value * fraction)).rounded(.up)
+            return (value * fraction).rounded(.up)
         }
     }
 }

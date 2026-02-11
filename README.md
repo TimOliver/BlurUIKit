@@ -35,7 +35,7 @@ let blurView = VariableBlurView()
 blurView.dimmingTintColor = .red
 
 // The tint color can 'overshoot' the blur view to add more gradual transition
-blurView.dimmingOvershoot = .relative(fraction: 0.25)
+blurView.dimmingOvershoot = .relative(fraction: 1.25)
 
 ```
 
@@ -46,7 +46,7 @@ blurView.dimmingOvershoot = .relative(fraction: 0.25)
 // Use the VariableBlur view with chainable modifiers
 VariableBlur(direction: .down)
     .dimmingTintColor(.red)
-    .dimmingOvershoot(.relative(fraction: 0.25))
+    .dimmingOvershoot(.relative(fraction: 1.25))
 
 ```
 

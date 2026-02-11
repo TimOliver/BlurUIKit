@@ -55,7 +55,7 @@ public struct VariableBlur: UIViewRepresentable {
     private var blurStartingInset: GradientSizing?
     private var dimmingTintColor: UIColor? = .systemBackground
     private var dimmingAlpha: DimmingAlpha? = .interfaceStyle(lightModeAlpha: 0.5, darkModeAlpha: 0.25)
-    private var dimmingOvershoot: GradientSizing? = .relative(fraction: 0.25)
+    private var dimmingOvershoot: GradientSizing? = .relative(fraction: 1.25)
     private var dimmingStartingInset: GradientSizing?
 
     // MARK: - Initializer
@@ -138,7 +138,7 @@ public struct VariableBlur: UIViewRepresentable {
     ///
     /// - Parameter overshoot: The overshoot distance, expressed as either an absolute point
     ///   value or a fraction of the view's size. Pass `nil` to confine the dimming gradient
-    ///   to the view's bounds. Defaults to `.relative(fraction: 0.25)`.
+    ///   to the view's bounds. Defaults to `.relative(fraction: 1.25)`.
     /// - Returns: A modified `VariableBlur` with the updated dimming overshoot.
     public func dimmingOvershoot(_ overshoot: GradientSizing?) -> VariableBlur {
         var copy = self
