@@ -28,7 +28,7 @@ _As of iOS 26, [this is now a public API](https://developer.apple.com/documentat
 
 ```swift
 
-// Create a new instance of `BlurUIKit`
+// Create a new instance of `VariableBlurView`
 let blurView = VariableBlurView()
 
 // Set a tint color for the colored gradient.

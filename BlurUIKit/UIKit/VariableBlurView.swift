@@ -178,8 +178,8 @@ public class VariableBlurView: UIView {
     // MARK: - Private
 
     // Configure the blur view by finding internal subviews and applying a fresh blur filter.
-    // Subviews are always re-looked-up and a new filter is always created because
-    // UIVisualEffectView rebuilds its subview hierarchy on trait changes.
+    // Subviews are cached via weak references and re-looked-up when needed, since
+    // UIVisualEffectView may rebuild its subview hierarchy on trait changes.
     private func configureView() {
         guard superview != nil else { return }
 
@@ -328,7 +328,7 @@ extension VariableBlurView {
         }
     }
 
-    /// Generates a gradient bitmap to be used with the blur filter.
+    /// Generates a gradient bitmap to be used as a blur mask or dimming gradient image.
     private func fetchGradientImage(startingInset: GradientSizing?, smooth: Bool = false, overshoot: GradientSizing? = nil) -> CGImage? {
         // Skip if we're not sized yet.
         guard frame.size.width != 0.0, frame.size.height != 0.0 else { return nil }
