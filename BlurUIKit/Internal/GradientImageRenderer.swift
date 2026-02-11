@@ -81,31 +81,33 @@ import UIKit
         // Clamp startLocation to valid range
         let clampedStartLocation = min(max(startLocation, 0.0), 1.0)
 
-        // Calculate gradient values for each pixel
-        for i in 0..<length {
-            // Determine normalized position along the gradient (0.0 to 1.0)
-            let normalizedPosition = length > 1 ? CGFloat(i) / CGFloat(length - 1) : 0.0
+        // Precompute reciprocals used in the gradient calculation
+        let lengthReciprocal: CGFloat = length > 1 ? 1.0 / CGFloat(length - 1) : 0.0
+        let gradientRangeReciprocal: CGFloat = clampedStartLocation < 1.0 ? 1.0 / (1.0 - clampedStartLocation) : 0.0
 
-            // Calculate alpha with starting inset
-            let alpha: CGFloat = {
-                // Adjust for starting inset - pixels before startLocation are fully opaque/transparent
-                let adjustedPosition: CGFloat
-                if clampedStartLocation >= 1.0 {
-                    adjustedPosition = 0.0
-                } else if normalizedPosition <= clampedStartLocation {
-                    adjustedPosition = 0.0
-                } else {
-                    adjustedPosition = (normalizedPosition - clampedStartLocation) / (1.0 - clampedStartLocation)
-                }
+        // Calculate the pixel boundary where the gradient transition starts.
+        // Pixels before this boundary all share the same constant alpha value.
+        let gradientStartPixel: Int = {
+            guard length > 1, clampedStartLocation > 0.0 else { return 0 }
+            return min(Int(clampedStartLocation * CGFloat(length - 1)) + 1, length)
+        }()
 
-                // Apply easing for smooth transition, or use linear interpolation
-                let finalPosition = smooth ? easeInOutSine(adjustedPosition) : adjustedPosition
+        // Bulk-fill the constant region before the gradient (no per-pixel math needed)
+        if gradientStartPixel > 0 {
+            let constantAlpha: UInt8 = reversed ? 0 : 255
+            for i in stride(from: 0, to: gradientStartPixel * bytesPerPixel, by: bytesPerPixel) {
+                pixels[i] = 0
+                pixels[i + 1] = constantAlpha
+            }
+        }
 
-                // Apply direction
-                return reversed ? finalPosition : 1.0 - finalPosition
-            }()
+        // Generate the gradient transition for the remaining pixels
+        for i in gradientStartPixel..<length {
+            let normalizedPosition = CGFloat(i) * lengthReciprocal
+            let adjustedPosition = (normalizedPosition - clampedStartLocation) * gradientRangeReciprocal
+            let eased = smooth ? easeInOutSine(adjustedPosition) : adjustedPosition
+            let alpha = reversed ? eased : 1.0 - eased
 
-            // Write gray (0) and alpha values
             let pixelIndex = i * bytesPerPixel
             pixels[pixelIndex] = 0
             pixels[pixelIndex + 1] = UInt8(min(max(alpha * 255.0, 0.0), 255.0))
