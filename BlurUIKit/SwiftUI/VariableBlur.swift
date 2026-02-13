@@ -110,7 +110,7 @@ public struct VariableBlur: UIViewRepresentable {
     /// - Returns: A modified `VariableBlur` with the updated dimming color.
     public func dimmingTintColor(_ color: Color?) -> VariableBlur {
         var copy = self
-        copy.dimmingTintColor = UIColor(color)
+        copy.dimmingTintColor = color.map { UIColor($0) }
         return copy
     }
 
