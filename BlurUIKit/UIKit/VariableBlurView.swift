@@ -137,8 +137,7 @@ public class VariableBlurView: UIView {
         // On iOS 17+, use the modern trait change registration
         if #available(iOS 17, *) {
             registerForTraitChanges([UITraitUserInterfaceStyle.self]) { (self: VariableBlurView, _: UITraitCollection) in
-                self.configureView()
-                self.updateDimmingViewAlpha()
+                self.setNeedsLayout()
             }
         }
     }
@@ -149,17 +148,16 @@ public class VariableBlurView: UIView {
         super.didMoveToSuperview()
         configureView()
         makeDimmingViewIfNeeded()
-        updateBlurFilter()
     }
 
     public override func layoutSubviews() {
         super.layoutSubviews()
 
         blurEffectView.frame = bounds
-        updateBlurFilter()
-
         dimmingView?.frame = dimmingViewFrame()
+
         updateDimmingViewAlpha()
+        configureView()
 
         guard needsUpdate else { return }
         generateImagesAsNeeded()
@@ -170,8 +168,7 @@ public class VariableBlurView: UIView {
         super.traitCollectionDidChange(previousTraitCollection)
         // On iOS 17+, trait changes are handled via registerForTraitChanges in commonInit()
         if #unavailable(iOS 17) {
-            configureView()
-            updateDimmingViewAlpha()
+            setNeedsLayout()
         }
     }
 
@@ -217,7 +214,7 @@ public class VariableBlurView: UIView {
 
     // Update the parameters of the blur filter when the state in this view changes
     private func updateBlurFilter() {
-        guard let variableBlurFilter = BlurFilterProvider.blurFilter(named: "variableBlur") else { return }
+        guard let gradientMaskImage, let variableBlurFilter = BlurFilterProvider.blurFilter(named: "variableBlur") else { return }
         variableBlurFilter.setValue(gradientMaskImage, forKey: "inputMaskImage")
         variableBlurFilter.setValue(maximumBlurRadius, forKey: "inputRadius")
         variableBlurFilter.setValue(true, forKey: "inputNormalizeEdges")
