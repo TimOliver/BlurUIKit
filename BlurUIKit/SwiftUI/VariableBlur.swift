@@ -108,9 +108,9 @@ public struct VariableBlur: UIViewRepresentable {
     ///   so its tint can adapt to trait changes. Pass `nil` to remove the dimming gradient
     ///   entirely. Defaults to `.systemBackground`.
     /// - Returns: A modified `VariableBlur` with the updated dimming color.
-    public func dimmingTintColor(_ color: UIColor?) -> VariableBlur {
+    public func dimmingTintColor(_ color: Color?) -> VariableBlur {
         var copy = self
-        copy.dimmingTintColor = color
+        copy.dimmingTintColor = UIColor(color)
         return copy
     }
 
