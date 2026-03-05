@@ -57,6 +57,7 @@ public struct VariableBlur: UIViewRepresentable {
     private var dimmingAlpha: DimmingAlpha? = .interfaceStyle(lightModeAlpha: 0.5, darkModeAlpha: 0.25)
     private var dimmingOvershoot: GradientSizing? = .relative(fraction: 1.25)
     private var dimmingStartingInset: GradientSizing?
+    private var passesTouchesThrough: Bool = true
 
     // MARK: - Initializer
 
@@ -160,6 +161,25 @@ public struct VariableBlur: UIViewRepresentable {
         copy.dimmingStartingInset = inset
         return copy
     }
+    
+    /// Controls whether touch events pass through this blur view to underlying views.
+    ///
+    /// When set to `true`, the blur view does not intercept touch events,
+    /// allowing interactions (such as taps and gestures) to reach the views
+    /// beneath it. When set to `false`, the blur view blocks touch events,
+    /// preventing underlying views from receiving them.
+    ///
+    /// This is particularly useful when using `VariableBlur` as a purely
+    /// decorative overlay that should not interfere with user interaction.
+    ///
+    /// - Parameter bool: A Boolean value indicating whether touches should
+    ///   pass through the blur view. Defaults to `false`.
+    /// - Returns: A modified `VariableBlur` with updated touch pass-through behavior.
+    public func passesTouchesThrough(_ bool: Bool) -> VariableBlur {
+        var copy = self
+        copy.passesTouchesThrough = bool
+        return copy
+    }
 
     // MARK: - UIViewRepresentable
 
@@ -185,5 +205,6 @@ public struct VariableBlur: UIViewRepresentable {
         view.dimmingAlpha = dimmingAlpha
         view.dimmingOvershoot = dimmingOvershoot
         view.dimmingStartingInset = dimmingStartingInset
+        view.isUserInteractionEnabled = !passesTouchesThrough
     }
 }
