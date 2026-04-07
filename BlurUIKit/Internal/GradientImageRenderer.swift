@@ -76,10 +76,10 @@ import UIKit
             bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
         ), let buffer = context.data else { return nil }
 
-        let pixels = buffer.assumingMemoryBound(to: UInt8.self)
+        let pixels: UnsafeMutablePointer<UInt8> = buffer.assumingMemoryBound(to: UInt8.self)
 
         // Clamp startLocation to valid range
-        let clampedStartLocation = min(max(startLocation, 0.0), 1.0)
+        let clampedStartLocation: CGFloat = min(max(startLocation, 0.0), 1.0)
 
         // Precompute reciprocals used in the gradient calculation
         let lengthReciprocal: CGFloat = length > 1 ? 1.0 / CGFloat(length - 1) : 0.0
@@ -91,29 +91,37 @@ import UIKit
             guard length > 1, clampedStartLocation > 0.0 else { return 0 }
             return min(Int(clampedStartLocation * CGFloat(length - 1)) + 1, length)
         }()
-
-        // Bulk-fill the constant region before the gradient (no per-pixel math needed)
-        if gradientStartPixel > 0 {
-            let constantAlpha: UInt8 = reversed ? 0 : 255
-            for i in stride(from: 0, to: gradientStartPixel * bytesPerPixel, by: bytesPerPixel) {
-                pixels[i] = 0
-                pixels[i + 1] = constantAlpha
-            }
+        
+        let gradientStart: Int = reversed ? 0 : gradientStartPixel
+        let gradientEnd: Int = reversed ? (length - gradientStartPixel) : length
+        let constantStart: Int = reversed ? gradientEnd : 0
+        let constantEnd: Int = reversed ? length : gradientStartPixel
+        
+        // Constant opaque region
+        for i in stride(from: constantStart * bytesPerPixel,
+                        to: constantEnd * bytesPerPixel,
+                        by: bytesPerPixel) {
+            pixels[i] = 0
+            pixels[i + 1] = 255
         }
-
-        // Generate the gradient transition for the remaining pixels
-        for i in gradientStartPixel..<length {
-            let normalizedPosition = CGFloat(i) * lengthReciprocal
-            let adjustedPosition = (normalizedPosition - clampedStartLocation) * gradientRangeReciprocal
-            let eased = smooth ? easeInOutSine(adjustedPosition) : adjustedPosition
-            let alpha = reversed ? eased : 1.0 - eased
-
-            let pixelIndex = i * bytesPerPixel
+        
+        // Gradient region
+        for i in gradientStart..<gradientEnd {
+            let normalizedPosition: CGFloat = CGFloat(i) * lengthReciprocal
+            
+            let adjustedPosition: CGFloat = reversed
+            ? normalizedPosition * gradientRangeReciprocal
+            : (normalizedPosition - clampedStartLocation) * gradientRangeReciprocal
+            
+            let eased: CGFloat = smooth ? easeInOutSine(adjustedPosition) : adjustedPosition
+            let alpha: CGFloat = reversed ? eased : 1.0 - eased
+            
+            let pixelIndex: Int = i * bytesPerPixel
             pixels[pixelIndex] = 0
             pixels[pixelIndex + 1] = UInt8(min(max(alpha * 255.0, 0.0), 255.0))
         }
 
-        guard let image = context.makeImage() else { return nil }
+        guard let image: CGImage = context.makeImage() else { return nil }
         cache.setObject(image, forKey: key)
         return image
     }
