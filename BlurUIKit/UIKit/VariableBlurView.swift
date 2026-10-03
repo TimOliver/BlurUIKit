@@ -97,6 +97,12 @@ public class VariableBlurView: UIView {
         didSet { resetDimmingImage() }
     }
 
+    /// The gradient-bearing length anchored to the maximum-value edge.
+    /// The remaining space stays at minimum blur and transparent dimming.
+    internal var activeGradientExtent: GradientSizing? {
+        didSet { reset() }
+    }
+
     /// Performs an update when the frame changes
     public override var frame: CGRect {
         didSet { resetForBoundsChange(oldValue: oldValue) }
@@ -325,7 +331,9 @@ extension VariableBlurView {
         // Update the dimming view image
         if dimmingTintColor != nil, dimmingView?.image == nil {
             makeDimmingViewIfNeeded()
-            if let dimmingImage = fetchGradientImage(startingInset: dimmingStartingInset, smooth: true, overshoot: dimmingOvershoot) {
+            if let dimmingImage = fetchGradientImage(startingInset: dimmingStartingInset,
+                                                     smooth: true,
+                                                     overshoot: dimmingOvershoot) {
                 dimmingView?.image = UIImage(cgImage: dimmingImage).withRenderingMode(.alwaysTemplate)
             }
         }
@@ -343,19 +351,32 @@ extension VariableBlurView {
 
         // Determine size based on direction (1 pixel wide/tall strip)
         let isVertical = direction == .up || direction == .down
-        let length: Int = {
-            let baseLength = isVertical ? bounds.height : bounds.width
-            return Int(applyOvershoot(to: baseLength, overshoot: overshoot).rounded(.up))
-        }()
+        let baseLength = isVertical ? bounds.height : bounds.width
+        let length = Int(applyOvershoot(to: baseLength, overshoot: overshoot).rounded(.up))
 
         guard length > 0 else { return nil }
 
-        // Determine the start location if a setting was provided (0.0 to 1.0)
+        // Resolve the active gradient length against the unmodified view bounds.
+        let activeLength: Int = {
+            guard let activeGradientExtent else { return length }
+            let value: CGFloat
+            switch activeGradientExtent {
+            case .absolute(let position):
+                value = position
+            case .relative(let fraction):
+                value = baseLength * fraction
+            }
+            guard value.isFinite else { return length }
+            return min(max(Int(value.rounded(.up)), 0), length)
+        }()
+
+        // Determine the start location within the active gradient.
         let startLocation: CGFloat = {
             guard let startingInset else { return 0.0 }
             switch startingInset {
             case .absolute(let position):
-                return position / CGFloat(length)
+                guard activeLength > 0 else { return 0.0 }
+                return position / CGFloat(activeLength)
             case .relative(let fraction):
                 return fraction
             }
@@ -368,6 +389,7 @@ extension VariableBlurView {
             length: length,
             isVertical: isVertical,
             startLocation: startLocation,
+            activeLength: activeLength,
             reversed: reversed,
             smooth: smooth,
             minimumAlpha: minimumAlpha

@@ -92,11 +92,12 @@ public class ReflectionBlurView: UIView {
     /// Hosts the single source subtree and creates its reflected layer instance.
     private let replicatorView = BlurReplicatorView()
 
-    /// Applies variable blur and dimming over the reflected half.
+    /// Applies variable blur and dimming over the reflection and beneath the source content.
     private let blurView: VariableBlurView = {
         let blurView = VariableBlurView()
         blurView.direction = .up
         blurView.maximumBlurRadius = 4.5
+        blurView.activeGradientExtent = .relative(fraction: 0.5)
         blurView.dimmingOvershoot = nil
         blurView.clipsToBounds = true
         return blurView
@@ -128,6 +129,8 @@ public class ReflectionBlurView: UIView {
         commonInit()
     }
 
+    /// Create a new instance of ReflectionBlurView with the provided coder.
+    /// - Parameter coder: The coder object (from Interface Builder)
     public required init?(coder: NSCoder) {
         contentView = UIView()
         super.init(coder: coder)
@@ -147,15 +150,25 @@ public class ReflectionBlurView: UIView {
         // Add the content view to the replicator view
         installContentView()
 
-        // Add the varaible blur view over the replicator layer
+        // Add the variable blur view as a sibling of the replicator layer
         addSubview(blurView)
 
-        // Configure the replicator to show its mirror upside down
+        // Keep the source above the blur and move the reflected instance beneath it.
+        // Preserving depth allows the sibling blur view to render between both instances.
+        replicatorView.layer.zPosition = 1.0
+        blurView.layer.zPosition = 0.0
+
+        // Configure the replicator to show its mirror upside down and behind the blur.
         let layer = replicatorView.replicatorLayer
         layer.instanceCount = 2
         layer.instanceDelay = 0.0
-        layer.instanceTransform = CATransform3DMakeScale(1.0, -1.0, 1.0)
-        layer.masksToBounds = true
+        layer.preservesDepth = true
+
+        // Set the replicated copy's Z-index to be negative so we can thread the blur view
+        // between it and the content view
+        var instanceTransform = CATransform3DMakeScale(1.0, -1.0, 1.0)
+        instanceTransform.m43 = -2.0
+        layer.instanceTransform = instanceTransform
 
         // Configure the replicator's visibility/alpha
         updateReflectionAppearance()
@@ -164,6 +177,8 @@ public class ReflectionBlurView: UIView {
     private func installContentView() {
         // Insert the content view into the replicator layer as the source layer
         contentView.clipsToBounds = true
+        // Reserve the root depth so each replicator instance stays on its intended side of the blur.
+        contentView.layer.zPosition = 0.0
         replicatorView.addSubview(contentView)
         setNeedsLayout()
     }
@@ -186,7 +201,7 @@ public class ReflectionBlurView: UIView {
         // Apply the sizes to the view content
         replicatorView.frame = bounds
         contentView.frame = CGRect(origin: .zero, size: sourceFrame.size)
-        blurView.frame = reflectionFrame
+        blurView.frame = bounds
     }
 
     /// The reflected layer instance has no corresponding view, so it should not intercept input.
