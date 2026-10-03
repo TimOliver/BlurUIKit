@@ -38,25 +38,30 @@ import UIKit
     ///   - length: The length of the gradient in pixels.
     ///   - isVertical: If true, creates a 1xN image; if false, creates an Nx1 image.
     ///   - startLocation: Normalized position (0.0-1.0) where the gradient transition begins.
-    ///                    Pixels before this point will be fully opaque (or transparent if reversed).
-    ///   - reversed: If false, gradient goes opaque→transparent. If true, transparent→opaque.
+    ///                    Pixels before this point will be fully opaque (or at minimum alpha if reversed).
+    ///   - reversed: If false, gradient goes opaque→minimum. If true, minimum→opaque.
     ///   - smooth: If true, applies sine-based easing for smooth transitions. If false, uses linear interpolation.
+    ///   - minimumAlpha: The alpha value at the normally transparent end of the gradient.
     /// - Returns: A CGImage containing the gradient, or nil if generation fails.
     static func makeGradientImage(
         length: Int,
         isVertical: Bool,
         startLocation: CGFloat = 0.0,
         reversed: Bool = false,
-        smooth: Bool = false
+        smooth: Bool = false,
+        minimumAlpha: CGFloat = 0.0
     ) -> CGImage? {
         guard length > 0 else { return nil }
+
+        let clampedMinimumAlpha = min(max(minimumAlpha, 0.0), 1.0)
 
         // Check for a cached image matching these parameters
         let key = CacheKey(length: length,
                            isVertical: isVertical,
                            startLocation: startLocation,
                            reversed: reversed,
-                           smooth: smooth)
+                           smooth: smooth,
+                           minimumAlpha: clampedMinimumAlpha)
         if let cached = cache.object(forKey: key) {
             return cached
         }
@@ -114,7 +119,8 @@ import UIKit
             : (normalizedPosition - clampedStartLocation) * gradientRangeReciprocal
             
             let eased: CGFloat = smooth ? easeInOutSine(adjustedPosition) : adjustedPosition
-            let alpha: CGFloat = reversed ? eased : 1.0 - eased
+            let gradientAlpha: CGFloat = reversed ? eased : 1.0 - eased
+            let alpha = clampedMinimumAlpha + (gradientAlpha * (1.0 - clampedMinimumAlpha))
             
             let pixelIndex: Int = i * bytesPerPixel
             pixels[pixelIndex] = 0
@@ -142,13 +148,22 @@ import UIKit
         let startLocation: CGFloat
         let reversed: Bool
         let smooth: Bool
+        let minimumAlpha: CGFloat
 
-        init(length: Int, isVertical: Bool, startLocation: CGFloat, reversed: Bool, smooth: Bool) {
+        init(
+            length: Int,
+            isVertical: Bool,
+            startLocation: CGFloat,
+            reversed: Bool,
+            smooth: Bool,
+            minimumAlpha: CGFloat
+        ) {
             self.length = length
             self.isVertical = isVertical
             self.startLocation = startLocation
             self.reversed = reversed
             self.smooth = smooth
+            self.minimumAlpha = minimumAlpha
         }
 
         override var hash: Int {
@@ -158,6 +173,7 @@ import UIKit
             hasher.combine(startLocation)
             hasher.combine(reversed)
             hasher.combine(smooth)
+            hasher.combine(minimumAlpha)
             return hasher.finalize()
         }
 
@@ -168,6 +184,7 @@ import UIKit
                 && startLocation == other.startLocation
                 && reversed == other.reversed
                 && smooth == other.smooth
+                && minimumAlpha == other.minimumAlpha
         }
     }
 }
