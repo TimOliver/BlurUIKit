@@ -7,14 +7,13 @@
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/TimOliver/BlurUIKit/main/LICENSE)
 ![Platform](https://img.shields.io/cocoapods/p/BlurUIKit.svg?style=flat)
 
-_As of iOS 26, [this is now a public API](https://developer.apple.com/documentation/uikit/uiscrollview/topedgeeffect)! Woohoo! However, please feel free to continue using this library if you need additional control, or need to continue supporting iOS 18._
-
 `BlurUIKit` is an open source UI framework that exposes more of the dynamic blur capabilities of UIKit in an App Store safe way. Namely, it exposes the 'progressive blur' effect Apple has started using in system apps where underlaying content gets progressively more blurry along a gradient pattern. It also exposes the ability to apply gaussian blurs directly to live `UIView` objects, useful for dynamic blur-fade transitions.
 
 # Features
 
 * Adds an extension on `UIView` to enable real time gaussian blurs on live view content.
 * Enables the ability to add a progressive blur gradient under areas that require higher contrast between layers.
+* Adds a reflection view for showing a blurred, flipped mirror of on-screen content (Useful for the new split mode on iPhone Duo.)
 * Allows an optional 'dimming' colored gradient to add additional contrast when needed.
 * Dimming and blur gradients can be configured independently.
 * Highly optimized to avoid regenerating gradient mask images unless needed.
@@ -67,7 +66,7 @@ redSquare.blurRadius = 30.0
 
 # Requirements
 
-`BlurUIKit` should work with iOS 14 and above. It may work on lower versions of iOS, but this hasnt been tested.
+`BlurUIKit` should work with iOS 15 and above. It may work on lower versions of iOS, but this hasnt been tested.
 
 # Installation
 

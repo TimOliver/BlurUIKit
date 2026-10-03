@@ -15,6 +15,8 @@ private var appleParkAtlas: UIImage = {
 }()
 
 final class PhotosViewCollectionCell: UICollectionViewCell {
+
+    static let imageCount = 8
     
     public var index: Int = 0 {
         didSet { setNeedsLayout() }

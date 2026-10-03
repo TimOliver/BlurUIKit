@@ -26,7 +26,7 @@ import UIKit
 /// alpha transitions. This approach ensures smooth gradients across all iOS versions,
 /// avoiding the hard edge artifacts present in CGGradient on iOS 16 and earlier.
 @available(iOS 14, *)
-@MainActor internal enum GradientImageRenderer {
+@MainActor internal enum BlurGradientImageRenderer {
 
     /// A shared cache that allows multiple blur views to re-use the same gradient image
     private static let cache = NSCache<CacheKey, CGImage>()
@@ -38,25 +38,36 @@ import UIKit
     ///   - length: The length of the gradient in pixels.
     ///   - isVertical: If true, creates a 1xN image; if false, creates an Nx1 image.
     ///   - startLocation: Normalized position (0.0-1.0) where the gradient transition begins.
-    ///                    Pixels before this point will be fully opaque (or transparent if reversed).
-    ///   - reversed: If false, gradient goes opaque→transparent. If true, transparent→opaque.
+    ///                    Pixels before this point will be fully opaque (or at minimum alpha if reversed).
+    ///   - activeLength: The number of pixels occupied by the gradient, anchored to its opaque edge.
+    ///                   Remaining pixels are filled with `minimumAlpha`.
+    ///   - reversed: If false, gradient goes opaque→minimum. If true, minimum→opaque.
     ///   - smooth: If true, applies sine-based easing for smooth transitions. If false, uses linear interpolation.
+    ///   - minimumAlpha: The alpha value at the normally transparent end of the gradient.
     /// - Returns: A CGImage containing the gradient, or nil if generation fails.
     static func makeGradientImage(
         length: Int,
         isVertical: Bool,
         startLocation: CGFloat = 0.0,
+        activeLength: Int? = nil,
         reversed: Bool = false,
-        smooth: Bool = false
+        smooth: Bool = false,
+        minimumAlpha: CGFloat = 0.0
     ) -> CGImage? {
         guard length > 0 else { return nil }
+
+        let clampedMinimumAlpha = minimumAlpha.isFinite ? min(max(minimumAlpha, 0.0), 1.0) : 0.0
+        let clampedStartLocation = startLocation.isFinite ? min(max(startLocation, 0.0), 1.0) : 0.0
+        let clampedActiveLength = min(max(activeLength ?? length, 0), length)
 
         // Check for a cached image matching these parameters
         let key = CacheKey(length: length,
                            isVertical: isVertical,
-                           startLocation: startLocation,
+                           startLocation: clampedStartLocation,
+                           activeLength: clampedActiveLength,
                            reversed: reversed,
-                           smooth: smooth)
+                           smooth: smooth,
+                           minimumAlpha: clampedMinimumAlpha)
         if let cached = cache.object(forKey: key) {
             return cached
         }
@@ -78,45 +89,55 @@ import UIKit
 
         let pixels: UnsafeMutablePointer<UInt8> = buffer.assumingMemoryBound(to: UInt8.self)
 
-        // Clamp startLocation to valid range
-        let clampedStartLocation: CGFloat = min(max(startLocation, 0.0), 1.0)
-
-        // Precompute reciprocals used in the gradient calculation
-        let lengthReciprocal: CGFloat = length > 1 ? 1.0 / CGFloat(length - 1) : 0.0
-        let gradientRangeReciprocal: CGFloat = clampedStartLocation < 1.0 ? 1.0 / (1.0 - clampedStartLocation) : 0.0
-
-        // Calculate the pixel boundary where the gradient transition starts.
-        // Pixels before this boundary all share the same constant alpha value.
-        let gradientStartPixel: Int = {
-            guard length > 1, clampedStartLocation > 0.0 else { return 0 }
-            return min(Int(clampedStartLocation * CGFloat(length - 1)) + 1, length)
-        }()
-        
-        let gradientStart: Int = reversed ? 0 : gradientStartPixel
-        let gradientEnd: Int = reversed ? (length - gradientStartPixel) : length
-        let constantStart: Int = reversed ? gradientEnd : 0
-        let constantEnd: Int = reversed ? length : gradientStartPixel
-        
-        // Constant opaque region
-        for i in stride(from: constantStart * bytesPerPixel,
-                        to: constantEnd * bytesPerPixel,
-                        by: bytesPerPixel) {
-            pixels[i] = 0
-            pixels[i + 1] = 255
+        // Fill the region beyond the active gradient with the minimum value.
+        let gradientOffset = reversed ? length - clampedActiveLength : 0
+        let minimumRegionStart = reversed ? 0 : clampedActiveLength
+        let minimumRegionEnd = minimumRegionStart + (length - clampedActiveLength)
+        let minimumAlphaValue = UInt8(clampedMinimumAlpha * 255.0)
+        for i in minimumRegionStart..<minimumRegionEnd {
+            let pixelIndex = i * bytesPerPixel
+            pixels[pixelIndex] = 0
+            pixels[pixelIndex + 1] = minimumAlphaValue
         }
-        
-        // Gradient region
+
+        // Precompute reciprocals used in the active gradient calculation.
+        let lengthReciprocal: CGFloat = clampedActiveLength > 1
+        ? 1.0 / CGFloat(clampedActiveLength - 1)
+        : 0.0
+        let gradientRangeReciprocal: CGFloat = clampedStartLocation < 1.0
+        ? 1.0 / (1.0 - clampedStartLocation)
+        : 0.0
+
+        // Calculate the pixel boundary where the active gradient transition starts.
+        let gradientStartPixel: Int = {
+            guard clampedActiveLength > 1, clampedStartLocation > 0.0 else { return 0 }
+            return min(Int(clampedStartLocation * CGFloat(clampedActiveLength - 1)) + 1,
+                       clampedActiveLength)
+        }()
+
+        let gradientStart = reversed ? 0 : gradientStartPixel
+        let gradientEnd = reversed ? (clampedActiveLength - gradientStartPixel) : clampedActiveLength
+        let constantStart = reversed ? gradientEnd : 0
+        let constantEnd = reversed ? clampedActiveLength : gradientStartPixel
+
+        // Constant opaque region within the active gradient.
+        for i in constantStart..<constantEnd {
+            let pixelIndex = (gradientOffset + i) * bytesPerPixel
+            pixels[pixelIndex] = 0
+            pixels[pixelIndex + 1] = 255
+        }
+
+        // Transition within the active gradient.
         for i in gradientStart..<gradientEnd {
-            let normalizedPosition: CGFloat = CGFloat(i) * lengthReciprocal
-            
-            let adjustedPosition: CGFloat = reversed
+            let normalizedPosition = CGFloat(i) * lengthReciprocal
+            let adjustedPosition = reversed
             ? normalizedPosition * gradientRangeReciprocal
             : (normalizedPosition - clampedStartLocation) * gradientRangeReciprocal
-            
-            let eased: CGFloat = smooth ? easeInOutSine(adjustedPosition) : adjustedPosition
-            let alpha: CGFloat = reversed ? eased : 1.0 - eased
-            
-            let pixelIndex: Int = i * bytesPerPixel
+            let eased = smooth ? easeInOutSine(adjustedPosition) : adjustedPosition
+            let gradientAlpha = reversed ? eased : 1.0 - eased
+            let alpha = clampedMinimumAlpha + (gradientAlpha * (1.0 - clampedMinimumAlpha))
+
+            let pixelIndex = (gradientOffset + i) * bytesPerPixel
             pixels[pixelIndex] = 0
             pixels[pixelIndex + 1] = UInt8(min(max(alpha * 255.0, 0.0), 255.0))
         }
@@ -140,15 +161,27 @@ import UIKit
         let length: Int
         let isVertical: Bool
         let startLocation: CGFloat
+        let activeLength: Int
         let reversed: Bool
         let smooth: Bool
+        let minimumAlpha: CGFloat
 
-        init(length: Int, isVertical: Bool, startLocation: CGFloat, reversed: Bool, smooth: Bool) {
+        init(
+            length: Int,
+            isVertical: Bool,
+            startLocation: CGFloat,
+            activeLength: Int,
+            reversed: Bool,
+            smooth: Bool,
+            minimumAlpha: CGFloat
+        ) {
             self.length = length
             self.isVertical = isVertical
             self.startLocation = startLocation
+            self.activeLength = activeLength
             self.reversed = reversed
             self.smooth = smooth
+            self.minimumAlpha = minimumAlpha
         }
 
         override var hash: Int {
@@ -156,8 +189,10 @@ import UIKit
             hasher.combine(length)
             hasher.combine(isVertical)
             hasher.combine(startLocation)
+            hasher.combine(activeLength)
             hasher.combine(reversed)
             hasher.combine(smooth)
+            hasher.combine(minimumAlpha)
             return hasher.finalize()
         }
 
@@ -166,8 +201,10 @@ import UIKit
             return length == other.length
                 && isVertical == other.isVertical
                 && startLocation == other.startLocation
+                && activeLength == other.activeLength
                 && reversed == other.reversed
                 && smooth == other.smooth
+                && minimumAlpha == other.minimumAlpha
         }
     }
 }

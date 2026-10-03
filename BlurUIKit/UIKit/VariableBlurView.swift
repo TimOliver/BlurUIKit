@@ -58,9 +58,14 @@ public class VariableBlurView: UIView {
         didSet { reset() }
     }
 
-    /// The maximum blur radius of the blur view when its gradient is at full opacity
+    /// The minimum blur radius at the normally transparent end of the gradient.
+    public var minimumBlurRadius = 0.0 {
+        didSet { resetBlurMask() }
+    }
+
+    /// The maximum blur radius of the blur view when its gradient is at full opacity.
     public var maximumBlurRadius = 3.5 {
-        didSet { updateBlurFilter() }
+        didSet { resetBlurMask() }
     }
 
     /// An optional amount of insetting from the opaque side where the blur reaches 100%.
@@ -90,6 +95,12 @@ public class VariableBlurView: UIView {
     /// An optional inset position where the colored gradient hits 100% of its transition.
     public var dimmingStartingInset: GradientSizing? {
         didSet { resetDimmingImage() }
+    }
+
+    /// The gradient-bearing length anchored to the maximum-value edge.
+    /// The remaining space stays at minimum blur and transparent dimming.
+    internal var activeGradientExtent: GradientSizing? {
+        didSet { reset() }
     }
 
     /// Performs an update when the frame changes
@@ -216,7 +227,7 @@ public class VariableBlurView: UIView {
     private func updateBlurFilter() {
         guard let gradientMaskImage, let variableBlurFilter = BlurFilterProvider.blurFilter(named: "variableBlur") else { return }
         variableBlurFilter.setValue(gradientMaskImage, forKey: "inputMaskImage")
-        variableBlurFilter.setValue(maximumBlurRadius, forKey: "inputRadius")
+        variableBlurFilter.setValue(effectiveMaximumBlurRadius, forKey: "inputRadius")
         variableBlurFilter.setValue(true, forKey: "inputNormalizeEdges")
 
         if backdropView == nil {
@@ -264,6 +275,11 @@ public class VariableBlurView: UIView {
 
 @available(iOS 14, *)
 extension VariableBlurView {
+    /// Schedules the backdrop filter to be recreated without invalidating its gradient images.
+    internal func setNeedsBlurFilterUpdate() {
+        setNeedsLayout()
+    }
+
     // Reset if a bounds change means we have to regenerate the images
     private func resetForBoundsChange(oldValue: CGRect) {
         let needsReset = {
@@ -312,39 +328,60 @@ extension VariableBlurView {
     private func generateImagesAsNeeded() {
         // Update the blur view's gradient mask
         if gradientMaskImage == nil {
-            gradientMaskImage = fetchGradientImage(startingInset: blurStartingInset)
+            gradientMaskImage = fetchGradientImage(startingInset: blurStartingInset,
+                                                   minimumAlpha: minimumBlurMaskAlpha)
             updateBlurFilter()
         }
 
         // Update the dimming view image
         if dimmingTintColor != nil, dimmingView?.image == nil {
             makeDimmingViewIfNeeded()
-            if let dimmingImage = fetchGradientImage(startingInset: dimmingStartingInset, smooth: true, overshoot: dimmingOvershoot) {
+            if let dimmingImage = fetchGradientImage(startingInset: dimmingStartingInset,
+                                                     smooth: true,
+                                                     overshoot: dimmingOvershoot) {
                 dimmingView?.image = UIImage(cgImage: dimmingImage).withRenderingMode(.alwaysTemplate)
             }
         }
     }
 
     /// Generates a gradient bitmap to be used as a blur mask or dimming gradient image.
-    private func fetchGradientImage(startingInset: GradientSizing?, smooth: Bool = false, overshoot: GradientSizing? = nil) -> CGImage? {
+    private func fetchGradientImage(
+        startingInset: GradientSizing?,
+        smooth: Bool = false,
+        overshoot: GradientSizing? = nil,
+        minimumAlpha: CGFloat = 0.0
+    ) -> CGImage? {
         // Skip if we're not sized yet.
         guard frame.size.width != 0.0, frame.size.height != 0.0 else { return nil }
 
         // Determine size based on direction (1 pixel wide/tall strip)
         let isVertical = direction == .up || direction == .down
-        let length: Int = {
-            let baseLength = isVertical ? bounds.height : bounds.width
-            return Int(applyOvershoot(to: baseLength, overshoot: overshoot).rounded(.up))
-        }()
+        let baseLength = isVertical ? bounds.height : bounds.width
+        let length = Int(applyOvershoot(to: baseLength, overshoot: overshoot).rounded(.up))
 
         guard length > 0 else { return nil }
 
-        // Determine the start location if a setting was provided (0.0 to 1.0)
+        // Resolve the active gradient length against the unmodified view bounds.
+        let activeLength: Int = {
+            guard let activeGradientExtent else { return length }
+            let value: CGFloat
+            switch activeGradientExtent {
+            case .absolute(let position):
+                value = position
+            case .relative(let fraction):
+                value = baseLength * fraction
+            }
+            guard value.isFinite else { return length }
+            return min(max(Int(value.rounded(.up)), 0), length)
+        }()
+
+        // Determine the start location within the active gradient.
         let startLocation: CGFloat = {
             guard let startingInset else { return 0.0 }
             switch startingInset {
             case .absolute(let position):
-                return position / CGFloat(length)
+                guard activeLength > 0 else { return 0.0 }
+                return position / CGFloat(activeLength)
             case .relative(let fraction):
                 return fraction
             }
@@ -353,13 +390,31 @@ extension VariableBlurView {
         // For up/right directions, the gradient runs in reverse (transparent to opaque)
         let reversed = direction == .up || direction == .right
 
-        return GradientImageRenderer.makeGradientImage(
+        return BlurGradientImageRenderer.makeGradientImage(
             length: length,
             isVertical: isVertical,
             startLocation: startLocation,
+            activeLength: activeLength,
             reversed: reversed,
-            smooth: smooth
+            smooth: smooth,
+            minimumAlpha: minimumAlpha
         )
+    }
+
+    /// The minimum radius expressed as a normalized blur-mask value.
+    private var minimumBlurMaskAlpha: CGFloat {
+        let maximumRadius = effectiveMaximumBlurRadius
+        guard maximumRadius > 0.0 else { return 0.0 }
+        guard !minimumBlurRadius.isNaN else { return 0.0 }
+
+        let minimumRadius = min(max(minimumBlurRadius, 0.0), maximumRadius)
+        return CGFloat(minimumRadius / maximumRadius)
+    }
+
+    /// The validated radius passed to the underlying blur filter.
+    private var effectiveMaximumBlurRadius: Double {
+        guard maximumBlurRadius.isFinite else { return 0.0 }
+        return max(maximumBlurRadius, 0.0)
     }
 
     /// Apply an optional overshoot value to this dimension
