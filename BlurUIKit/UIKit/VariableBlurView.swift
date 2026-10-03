@@ -353,7 +353,7 @@ extension VariableBlurView {
         // For up/right directions, the gradient runs in reverse (transparent to opaque)
         let reversed = direction == .up || direction == .right
 
-        return GradientImageRenderer.makeGradientImage(
+        return BlurGradientImageRenderer.makeGradientImage(
             length: length,
             isVertical: isVertical,
             startLocation: startLocation,
