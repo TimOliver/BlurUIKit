@@ -40,13 +40,12 @@ final class ReflectionBlurViewController: UIViewController {
         cardView.addSubview(imageView)
 
         redSquareView.backgroundColor = .systemRed
-        cardView.addSubview(redSquareView)
+        reflectionView.contentView.addSubview(redSquareView)
 
-        reflectionView.minimumBlurRadius = 8.0
-        reflectionView.maximumBlurRadius = 40.0
-        reflectionView.blurStartingInset = .relative(fraction: 0.1)
+        reflectionView.minimumBlurRadius = 7.0
+        reflectionView.maximumBlurRadius = 60.0
         reflectionView.dimmingTintColor = .black
-        reflectionView.dimmingAlpha = .constant(alpha: 0.6)
+        reflectionView.dimmingAlpha = .constant(alpha: 0.9)
         view.addSubview(reflectionView)
     }
 
@@ -72,7 +71,7 @@ final class ReflectionBlurViewController: UIViewController {
         let contentBounds = reflectionView.contentView.bounds
         let horizontalMargin: CGFloat = 24.0
         let midpointMargin: CGFloat = 16.0
-        let maximumWidth = min(contentBounds.width - (horizontalMargin * 2.0), 480.0)
+        let maximumWidth = min(contentBounds.width - (horizontalMargin * 2.0), 640.0)
         let maximumContentHeight = max(contentBounds.height - view.safeAreaInsets.top - midpointMargin, 0.0)
 
         let cardWidth = max(min(maximumWidth, maximumContentHeight * (16.0 / 9.0)), 0.0)
@@ -81,12 +80,13 @@ final class ReflectionBlurViewController: UIViewController {
                                 y: contentBounds.maxY - cardHeight - midpointMargin,
                                 width: cardWidth,
                                 height: cardHeight)
-        cardView.layer.cornerRadius = min(cardWidth, cardHeight) * 0.1
+        cardView.layer.cornerRadius = min(cardWidth, cardHeight) * 0.175
         imageView.frame = cardView.bounds
 
         let squareLength = min(cardWidth, cardHeight) * 0.64
         redSquareView.bounds = CGRect(x: 0.0, y: 0.0, width: squareLength, height: squareLength)
-        redSquareView.center = CGPoint(x: cardView.bounds.width * 0.78,
-                                       y: cardView.bounds.height * 0.52)
+        let squareCenter = CGPoint(x: cardView.bounds.width * 0.78,
+                                   y: cardView.bounds.height * 0.52)
+        redSquareView.center = cardView.convert(squareCenter, to: reflectionView.contentView)
     }
 }
