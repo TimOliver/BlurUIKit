@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		2278AEB23070B93300748C72 /* ReflectionBlurView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2278AEB13070B93300748C72 /* ReflectionBlurView.swift */; };
 		2278AEB43070BCDC00748C72 /* BlurReplicatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2278AEB33070BCDC00748C72 /* BlurReplicatorView.swift */; };
+		2278AEB63070BEF600748C72 /* ReflectionBlurViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2278AEB53070BEF600748C72 /* ReflectionBlurViewController.swift */; };
 		229642C62C1E8768003C04C5 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 229642C52C1E8768003C04C5 /* AppDelegate.swift */; };
 		229642CA2C1E8768003C04C5 /* MapViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 229642C92C1E8768003C04C5 /* MapViewController.swift */; };
 		229642CF2C1E8769003C04C5 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 229642CE2C1E8769003C04C5 /* Assets.xcassets */; };
@@ -29,6 +30,7 @@
 		226E9CBE2D253B16007EFE4D /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
 		2278AEB13070B93300748C72 /* ReflectionBlurView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReflectionBlurView.swift; sourceTree = "<group>"; };
 		2278AEB33070BCDC00748C72 /* BlurReplicatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlurReplicatorView.swift; sourceTree = "<group>"; };
+		2278AEB53070BEF600748C72 /* ReflectionBlurViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReflectionBlurViewController.swift; sourceTree = "<group>"; };
 		229642C22C1E8768003C04C5 /* BlurUIKitExample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BlurUIKitExample.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		229642C52C1E8768003C04C5 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		229642C92C1E8768003C04C5 /* MapViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapViewController.swift; sourceTree = "<group>"; };
@@ -106,6 +108,7 @@
 				22D5CBC62CAAF0DE007320EE /* PhotosViewController.swift */,
 				22F9D8642D160890007E1386 /* PhotosViewCollectionCell.swift */,
 				22F7A97E2E12E67800FC5943 /* BlurViewController.swift */,
+				2278AEB53070BEF600748C72 /* ReflectionBlurViewController.swift */,
 				22SWUI032E4B000000000004 /* SwiftUIExampleView.swift */,
 				229642CE2C1E8769003C04C5 /* Assets.xcassets */,
 				229642D02C1E8769003C04C5 /* LaunchScreen.storyboard */,
@@ -208,6 +211,7 @@
 				229642CA2C1E8768003C04C5 /* MapViewController.swift in Sources */,
 				22F9D8652D160890007E1386 /* PhotosViewCollectionCell.swift in Sources */,
 				229642C62C1E8768003C04C5 /* AppDelegate.swift in Sources */,
+				2278AEB63070BEF600748C72 /* ReflectionBlurViewController.swift in Sources */,
 				229642DB2C1E8A3F003C04C5 /* VariableBlurView.swift in Sources */,
 				229642DF2C1E91F7003C04C5 /* BlurFilterProvider.swift in Sources */,
 				2278AEB23070B93300748C72 /* ReflectionBlurView.swift in Sources */,
