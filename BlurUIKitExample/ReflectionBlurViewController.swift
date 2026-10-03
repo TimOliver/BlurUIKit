@@ -29,6 +29,7 @@ final class ReflectionBlurViewController: UIViewController {
         collectionView.register(PhotosViewCollectionCell.self,
                                 forCellWithReuseIdentifier: Self.cellIdentifier)
         collectionView.dataSource = self
+        collectionView.delegate = self
     }
 
     required init?(coder: NSCoder) {
@@ -51,6 +52,9 @@ final class ReflectionBlurViewController: UIViewController {
         reflectionView.dimmingTintColor = .black
         reflectionView.dimmingAlpha = .constant(alpha: 0.9)
         view.addSubview(reflectionView)
+
+        // Make the collection view's native scrolling gesture available across the full screen.
+        view.addGestureRecognizer(collectionView.panGestureRecognizer)
     }
 
     override func viewDidLayoutSubviews() {
@@ -85,6 +89,12 @@ final class ReflectionBlurViewController: UIViewController {
         layout.itemSize = itemSize
         layout.sectionInset = sectionInset
         layout.invalidateLayout()
+    }
+}
+
+extension ReflectionBlurViewController: UICollectionViewDelegate {
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        reflectionView.setNeedsReflectionUpdate()
     }
 }
 

@@ -275,6 +275,11 @@ public class VariableBlurView: UIView {
 
 @available(iOS 14, *)
 extension VariableBlurView {
+    /// Schedules the backdrop filter to be recreated without invalidating its gradient images.
+    internal func setNeedsBlurFilterUpdate() {
+        setNeedsLayout()
+    }
+
     // Reset if a bounds change means we have to regenerate the images
     private func resetForBoundsChange(oldValue: CGRect) {
         let needsReset = {

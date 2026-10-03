@@ -87,6 +87,17 @@ public class ReflectionBlurView: UIView {
         set { blurView.dimmingStartingInset = newValue }
     }
 
+    // MARK: - Public Methods
+
+    /// Marks the reflection's blur backdrop to be refreshed on the next layout pass.
+    ///
+    /// Call this while content is moving without changing the reflection view's geometry,
+    /// such as from `scrollViewDidScroll(_:)`. Multiple calls made before the next layout
+    /// pass are automatically coalesced.
+    public func setNeedsReflectionUpdate() {
+        blurView.setNeedsBlurFilterUpdate()
+    }
+
     // MARK: - Private Properties
 
     /// Hosts the single source subtree and creates its reflected layer instance.
