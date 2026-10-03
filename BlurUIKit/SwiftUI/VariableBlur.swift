@@ -34,6 +34,7 @@ import BlurUIKit
 ///
 /// ```swift
 /// VariableBlur(direction: .down)
+///     .minimumBlurRadius(1)
 ///     .maximumBlurRadius(5)
 ///     .dimmingTintColor(.black)
 ///     .dimmingAlpha(.constant(alpha: 0.3))
@@ -51,6 +52,7 @@ public struct VariableBlur: UIViewRepresentable {
     // MARK: - Stored Properties
 
     private var direction: Direction
+    private var minimumBlurRadius: CGFloat = 0.0
     private var maximumBlurRadius: CGFloat = 3.5
     private var blurStartingInset: GradientSizing?
     private var dimmingTintColor: UIColor? = .systemBackground
@@ -63,8 +65,8 @@ public struct VariableBlur: UIViewRepresentable {
 
     /// Creates a new variable blur view.
     /// - Parameter direction: The direction the blur gradient flows, determining which edge
-    ///   starts transparent and which reaches full blur intensity. For example, `.down` starts
-    ///   transparent at the top and reaches full blur at the bottom, making it ideal for
+    ///   starts at minimum intensity and which reaches full blur intensity. For example, `.down`
+    ///   starts at minimum intensity at the top and reaches full blur at the bottom, making it ideal for
     ///   status bar overlays. Defaults to `.down`.
     public init(direction: Direction = .down) {
         self.direction = direction
@@ -72,10 +74,23 @@ public struct VariableBlur: UIViewRepresentable {
 
     // MARK: - Modifier Methods
 
+    /// Sets the minimum blur radius applied at the normally transparent end of the gradient.
+    ///
+    /// Use a value above zero when the blur should remain active across the full view rather
+    /// than fading away completely.
+    ///
+    /// - Parameter radius: The minimum blur radius in points. Defaults to `0.0`.
+    /// - Returns: A modified `VariableBlur` with the updated minimum blur radius.
+    public func minimumBlurRadius(_ radius: CGFloat) -> VariableBlur {
+        var copy = self
+        copy.minimumBlurRadius = radius
+        return copy
+    }
+
     /// Sets the maximum blur radius applied at the fully-opaque end of the gradient.
     ///
     /// Higher values produce a stronger blur effect. The blur intensity ramps linearly
-    /// from zero at the transparent edge up to this value at the opaque edge.
+    /// from ``minimumBlurRadius(_:)`` up to this value at the opaque edge.
     ///
     /// - Parameter radius: The maximum blur radius in points. Defaults to `3.5`.
     /// - Returns: A modified `VariableBlur` with the updated blur radius.
@@ -199,6 +214,7 @@ public struct VariableBlur: UIViewRepresentable {
     /// Transfers all stored properties from this struct onto the given view instance.
     private func applyProperties(to view: VariableBlurView) {
         view.direction = direction
+        view.minimumBlurRadius = minimumBlurRadius
         view.maximumBlurRadius = maximumBlurRadius
         view.blurStartingInset = blurStartingInset
         view.dimmingTintColor = dimmingTintColor
