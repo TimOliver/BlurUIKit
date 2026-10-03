@@ -97,10 +97,10 @@ public class VariableBlurView: UIView {
         didSet { resetDimmingImage() }
     }
 
-    /// The gradient-bearing length anchored to the maximum-value edge.
-    /// The remaining space stays at minimum blur and transparent dimming.
-    internal var activeGradientExtent: GradientSizing? {
-        didSet { reset() }
+    /// The blur mask's gradient-bearing length, anchored to its maximum-radius edge.
+    /// The remaining space stays at minimum blur. This does not affect dimming.
+    internal var blurGradientExtent: GradientSizing? {
+        didSet { resetBlurMask() }
     }
 
     /// The internal visual effect view that provides the blur
@@ -331,11 +331,13 @@ extension VariableBlurView {
         // Update the blur view's gradient mask
         if gradientMaskImage == nil {
             gradientMaskImage = fetchGradientImage(startingInset: blurStartingInset,
+                                                   extent: blurGradientExtent,
                                                    minimumAlpha: minimumBlurMaskAlpha)
             updateBlurFilter()
         }
 
-        // Update the dimming view image
+        // Dimming has its own full-length 0-to-1 gradient, independent of the blur range/extent.
+        // Its overall opacity is applied to the image view by updateDimmingViewAlpha().
         if dimmingTintColor != nil, dimmingView?.image == nil {
             makeDimmingViewIfNeeded()
             if let dimmingImage = fetchGradientImage(startingInset: dimmingStartingInset,
@@ -351,6 +353,7 @@ extension VariableBlurView {
         startingInset: GradientSizing?,
         smooth: Bool = false,
         overshoot: GradientSizing? = nil,
+        extent: GradientSizing? = nil,
         minimumAlpha: CGFloat = 0.0
     ) -> CGImage? {
         // Skip if we're not sized yet.
@@ -365,9 +368,9 @@ extension VariableBlurView {
 
         // Resolve the active gradient length against the unmodified view bounds.
         let activeLength: Int = {
-            guard let activeGradientExtent else { return length }
+            guard let extent else { return length }
             let value: CGFloat
-            switch activeGradientExtent {
+            switch extent {
             case .absolute(let position):
                 value = position
             case .relative(let fraction):

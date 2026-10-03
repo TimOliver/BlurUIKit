@@ -108,7 +108,7 @@ public class ReflectionBlurView: UIView {
         let blurView = VariableBlurView()
         blurView.direction = .up
         blurView.maximumBlurRadius = 4.5
-        blurView.activeGradientExtent = .relative(fraction: 0.5)
+        blurView.blurGradientExtent = .relative(fraction: 1.0)
         blurView.dimmingOvershoot = nil
         blurView.clipsToBounds = true
         return blurView
@@ -212,7 +212,7 @@ public class ReflectionBlurView: UIView {
         // Apply the sizes to the view content
         replicatorView.frame = bounds
         contentView.frame = CGRect(origin: .zero, size: sourceFrame.size)
-        blurView.frame = bounds
+        blurView.frame = reflectionFrame
     }
 
     /// The reflected layer instance has no corresponding view, so it should not intercept input.

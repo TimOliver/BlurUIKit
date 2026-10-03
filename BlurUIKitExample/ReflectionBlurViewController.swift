@@ -43,14 +43,14 @@ final class ReflectionBlurViewController: UIViewController {
 
         collectionView.backgroundColor = .clear
         collectionView.showsHorizontalScrollIndicator = false
-        collectionView.decelerationRate = .fast
         collectionView.contentInsetAdjustmentBehavior = .never
         reflectionView.contentView.addSubview(collectionView)
 
-        reflectionView.minimumBlurRadius = 7.0
-        reflectionView.maximumBlurRadius = 60.0
+        reflectionView.minimumBlurRadius = 5.0
+        reflectionView.maximumBlurRadius = 50.0
+        reflectionView.reflectionAlpha = 0.5
         reflectionView.dimmingTintColor = .black
-        reflectionView.dimmingAlpha = .constant(alpha: 0.9)
+        reflectionView.dimmingAlpha = .constant(alpha: 0.85)
         view.addSubview(reflectionView)
 
         // Make the collection view's native scrolling gesture available across the full screen.
@@ -64,7 +64,7 @@ final class ReflectionBlurViewController: UIViewController {
         reflectionView.layoutIfNeeded()
 
         let contentBounds = reflectionView.contentView.bounds
-        let midpointMargin: CGFloat = 16.0
+        let midpointMargin: CGFloat = 48.0
         let maximumContentHeight = max(contentBounds.height - view.safeAreaInsets.top - midpointMargin, 0.0)
 
         let itemWidth = max(min(contentBounds.width * 0.82,
