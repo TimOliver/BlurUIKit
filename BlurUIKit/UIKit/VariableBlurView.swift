@@ -103,11 +103,6 @@ public class VariableBlurView: UIView {
         didSet { reset() }
     }
 
-    /// Performs an update when the frame changes
-    public override var frame: CGRect {
-        didSet { resetForBoundsChange(oldValue: oldValue) }
-    }
-
     /// The internal visual effect view that provides the blur
     private let blurEffectView = UIVisualEffectView(effect: UIBlurEffect(style: .regular))
 
@@ -116,6 +111,9 @@ public class VariableBlurView: UIView {
 
     /// Track when the images need to be regenerated
     private var needsUpdate = false
+
+    /// Track the laid-out size, including sizing performed through bounds by SwiftUI or Auto Layout.
+    private var lastLayoutSize: CGSize = .zero
 
     /// An optional dimming gradient shown along with the blur view
     private var dimmingView: UIImageView?
@@ -164,13 +162,17 @@ public class VariableBlurView: UIView {
     public override func layoutSubviews() {
         super.layoutSubviews()
 
+        resetForBoundsChange(oldSize: lastLayoutSize)
+        lastLayoutSize = bounds.size
+
         blurEffectView.frame = bounds
         dimmingView?.frame = dimmingViewFrame()
 
         updateDimmingViewAlpha()
         configureView()
 
-        guard needsUpdate else { return }
+        // A zero-sized layout cannot generate masks. Keep the update pending until we're sized.
+        guard needsUpdate, bounds.width > 0.0, bounds.height > 0.0 else { return }
         generateImagesAsNeeded()
         needsUpdate = false
     }
@@ -281,13 +283,13 @@ extension VariableBlurView {
     }
 
     // Reset if a bounds change means we have to regenerate the images
-    private func resetForBoundsChange(oldValue: CGRect) {
+    private func resetForBoundsChange(oldSize: CGSize) {
         let needsReset = {
             switch direction {
             case .down, .up:
-                return frame.height != oldValue.height
+                return bounds.height != oldSize.height
             case .left, .right:
-                return frame.width != oldValue.width
+                return bounds.width != oldSize.width
             }
         }()
         guard needsReset else { return }
@@ -352,7 +354,7 @@ extension VariableBlurView {
         minimumAlpha: CGFloat = 0.0
     ) -> CGImage? {
         // Skip if we're not sized yet.
-        guard frame.size.width != 0.0, frame.size.height != 0.0 else { return nil }
+        guard bounds.width > 0.0, bounds.height > 0.0 else { return nil }
 
         // Determine size based on direction (1 pixel wide/tall strip)
         let isVertical = direction == .up || direction == .down

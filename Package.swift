@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "BlurUIKit",
-    platforms: [.iOS(.v15)],
+    platforms: [.iOS("15.0")],
     products: [
         .library(
             name: "BlurUIKit",
@@ -24,6 +24,11 @@ let package = Package(
             name: "BlurSwiftUI",
             dependencies: ["BlurUIKit"],
             path: "BlurUIKit/SwiftUI/"
+        ),
+        .testTarget(
+            name: "BlurUIKitTests",
+            dependencies: ["BlurUIKit"],
+            path: "Tests/BlurUIKitTests"
         ),
     ]
 )
