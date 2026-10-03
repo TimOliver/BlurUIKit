@@ -10,15 +10,25 @@ import UIKit
 final class ReflectionBlurViewController: UIViewController {
 
     private let reflectionView = ReflectionBlurView()
-    private let cardView = UIView()
-    private let imageView = UIImageView()
-    private let redSquareView = UIView()
+    private let collectionView: UICollectionView
+
+    private static let cellIdentifier = "AppleParkPhotoCell"
 
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
+        let layout = UICollectionViewFlowLayout()
+        layout.scrollDirection = .horizontal
+        layout.minimumLineSpacing = 16.0
+        layout.minimumInteritemSpacing = 0.0
+        collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
+
         super.init(nibName: nil, bundle: nil)
         tabBarItem.title = "Reflection"
         tabBarItem.image = UIImage(systemName: "square.bottomhalf.filled")
         tabBarItem.selectedImage = UIImage(systemName: "square.bottomhalf.filled")
+
+        collectionView.register(PhotosViewCollectionCell.self,
+                                forCellWithReuseIdentifier: Self.cellIdentifier)
+        collectionView.dataSource = self
     }
 
     required init?(coder: NSCoder) {
@@ -30,36 +40,17 @@ final class ReflectionBlurViewController: UIViewController {
 
         view.backgroundColor = .black
 
-        cardView.backgroundColor = .secondarySystemBackground
-        cardView.layer.cornerCurve = .continuous
-        cardView.layer.masksToBounds = true
-        reflectionView.contentView.addSubview(cardView)
-
-        imageView.image = UIImage(named: "AppleParkAtlas")?.preparingForDisplay()
-        imageView.layer.contentsRect = CGRect(x: 0.0, y: 0.0, width: 0.499, height: 0.249)
-        cardView.addSubview(imageView)
-
-        redSquareView.backgroundColor = .systemRed
-        reflectionView.contentView.addSubview(redSquareView)
+        collectionView.backgroundColor = .clear
+        collectionView.showsHorizontalScrollIndicator = false
+        collectionView.decelerationRate = .fast
+        collectionView.contentInsetAdjustmentBehavior = .never
+        reflectionView.contentView.addSubview(collectionView)
 
         reflectionView.minimumBlurRadius = 7.0
         reflectionView.maximumBlurRadius = 60.0
         reflectionView.dimmingTintColor = .black
         reflectionView.dimmingAlpha = .constant(alpha: 0.9)
         view.addSubview(reflectionView)
-    }
-
-    override func viewIsAppearing(_ animated: Bool) {
-        super.viewIsAppearing(animated)
-
-        redSquareView.layer.removeAnimation(forKey: "spin")
-
-        let rotation = CABasicAnimation(keyPath: "transform.rotation")
-        rotation.fromValue = 0.0
-        rotation.toValue = Double.pi * 2.0
-        rotation.duration = 2.0
-        rotation.repeatCount = .infinity
-        redSquareView.layer.add(rotation, forKey: "spin")
     }
 
     override func viewDidLayoutSubviews() {
@@ -69,24 +60,47 @@ final class ReflectionBlurViewController: UIViewController {
         reflectionView.layoutIfNeeded()
 
         let contentBounds = reflectionView.contentView.bounds
-        let horizontalMargin: CGFloat = 24.0
         let midpointMargin: CGFloat = 16.0
-        let maximumWidth = min(contentBounds.width - (horizontalMargin * 2.0), 640.0)
         let maximumContentHeight = max(contentBounds.height - view.safeAreaInsets.top - midpointMargin, 0.0)
 
-        let cardWidth = max(min(maximumWidth, maximumContentHeight * (16.0 / 9.0)), 0.0)
-        let cardHeight = cardWidth * (9.0 / 16.0)
-        cardView.frame = CGRect(x: (contentBounds.width - cardWidth) * 0.5,
-                                y: contentBounds.maxY - cardHeight - midpointMargin,
-                                width: cardWidth,
-                                height: cardHeight)
-        cardView.layer.cornerRadius = min(cardWidth, cardHeight) * 0.175
-        imageView.frame = cardView.bounds
+        let itemWidth = max(min(contentBounds.width * 0.82,
+                                640.0,
+                                maximumContentHeight * (16.0 / 9.0)), 0.0)
+        let itemHeight = itemWidth * (9.0 / 16.0)
 
-        let squareLength = min(cardWidth, cardHeight) * 0.64
-        redSquareView.bounds = CGRect(x: 0.0, y: 0.0, width: squareLength, height: squareLength)
-        let squareCenter = CGPoint(x: cardView.bounds.width * 0.78,
-                                   y: cardView.bounds.height * 0.52)
-        redSquareView.center = cardView.convert(squareCenter, to: reflectionView.contentView)
+        collectionView.frame = CGRect(x: contentBounds.minX,
+                                      y: contentBounds.maxY - itemHeight - midpointMargin,
+                                      width: contentBounds.width,
+                                      height: itemHeight)
+
+        guard let layout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout else { return }
+        let horizontalInset = max((collectionView.bounds.width - itemWidth) * 0.5, 0.0)
+        let itemSize = CGSize(width: itemWidth, height: itemHeight)
+        let sectionInset = UIEdgeInsets(top: 0.0,
+                                       left: horizontalInset,
+                                       bottom: 0.0,
+                                       right: horizontalInset)
+        guard layout.itemSize != itemSize || layout.sectionInset != sectionInset else { return }
+
+        layout.itemSize = itemSize
+        layout.sectionInset = sectionInset
+        layout.invalidateLayout()
+    }
+}
+
+extension ReflectionBlurViewController: UICollectionViewDataSource {
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        PhotosViewCollectionCell.imageCount
+    }
+
+    func collectionView(_ collectionView: UICollectionView,
+                        cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: Self.cellIdentifier,
+                                                            for: indexPath) as? PhotosViewCollectionCell else {
+            fatalError("Incorrect cell type")
+        }
+
+        cell.index = indexPath.item
+        return cell
     }
 }
