@@ -8,7 +8,7 @@ Pod::Spec.new do |s|
   s.source   = { :git => 'https://github.com/TimOliver/BlurUIKit.git', :tag => s.version }
   s.requires_arc = true
   s.swift_version = '6.0'
-  s.ios.deployment_target   = '14.0'
+  s.ios.deployment_target   = '15.0'
 
   s.default_subspecs = 'UIKit'
 
