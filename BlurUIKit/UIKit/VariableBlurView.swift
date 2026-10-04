@@ -30,7 +30,7 @@ import UIKit
 public class VariableBlurView: UIView {
 
     /// The possible directions that the gradient of this blur view may flow in.
-    public enum Direction {
+    public enum Direction: Hashable, Sendable {
         case down   // Downwards. Useful for the iOS status bar
         case up     // Upwards. Useful for view controller toolbars
         case left   // Left. Useful for iPadOS sidebar
@@ -38,7 +38,7 @@ public class VariableBlurView: UIView {
     }
 
     /// An absolute or relative amount of sizing used to customize the appearance of the blur and gradient views.
-    public enum GradientSizing {
+    public enum GradientSizing: Hashable, Sendable {
         // A distance in on-screen UI points.
         case absolute(position: CGFloat)
         // A relative fraction of this view's size along the gradient direction. (0.0 = 0%, 1.5 = 150%)
@@ -46,7 +46,7 @@ public class VariableBlurView: UIView {
     }
 
     /// The amount of alpha applied to the colored gradient view over the blur view to add more contrast
-    public enum DimmingAlpha {
+    public enum DimmingAlpha: Hashable, Sendable {
         // A constant value shared between light and dark mode
         case constant(alpha: CGFloat)
         // Different values between light mode and dark mode.
@@ -55,24 +55,36 @@ public class VariableBlurView: UIView {
 
     /// The current direction of the gradient for this blur view
     public var direction: Direction = .down {
-        didSet { reset() }
+        didSet {
+            guard direction != oldValue else { return }
+            reset()
+        }
     }
 
     /// The minimum blur radius at the normally transparent end of the gradient.
     public var minimumBlurRadius = 0.0 {
-        didSet { resetBlurMask() }
+        didSet {
+            guard minimumBlurRadius != oldValue else { return }
+            resetBlurMask()
+        }
     }
 
     /// The maximum blur radius of the blur view when its gradient is at full opacity.
     public var maximumBlurRadius = 3.5 {
-        didSet { resetBlurMask() }
+        didSet {
+            guard maximumBlurRadius != oldValue else { return }
+            resetBlurMask()
+        }
     }
 
     /// Distance inward from the maximum-radius edge where maximum blur is reached.
     /// The remaining region stays at maximum blur. Fractions use the view's bounds.
     /// Insets are clamped to the view's size. Nil means maximum blur at the edge.
     public var blurMaximumRadiusInset: GradientSizing? {
-        didSet { resetBlurMask() }
+        didSet {
+            guard blurMaximumRadiusInset != oldValue else { return }
+            resetBlurMask()
+        }
     }
 
     /// An optional colored gradient to dim the underlying content for better contrast.
@@ -86,7 +98,10 @@ public class VariableBlurView: UIView {
     /// The alpha value of the colored gradient
     public var dimmingAlpha: DimmingAlpha? = .interfaceStyle(lightModeAlpha: 0.5,
                                                              darkModeAlpha: 0.25) {
-        didSet { setNeedsLayout() }
+        didSet {
+            guard dimmingAlpha != oldValue else { return }
+            setNeedsLayout()
+        }
     }
 
     /// Distance inward from the full-color edge where dimming reaches full strength.
@@ -94,7 +109,10 @@ public class VariableBlurView: UIView {
     /// independent of `dimmingClearExtension`. The remaining region stays at full color.
     /// Insets are clamped to the view's size. Nil means full color at the edge.
     public var dimmingFullColorInset: GradientSizing? {
-        didSet { resetDimmingImage() }
+        didSet {
+            guard dimmingFullColorInset != oldValue else { return }
+            resetDimmingImage()
+        }
     }
 
     /// Extra space outside the clear edge over which dimming transitions from alpha zero.
@@ -103,7 +121,10 @@ public class VariableBlurView: UIView {
     /// Defaults to 25% extra. This never enlarges the blur backdrop.
     /// The receiver and its ancestors must allow overflow for the extension to be visible.
     public var dimmingClearExtension: GradientSizing? = .relative(fraction: 0.25) {
-        didSet { resetDimmingImage() }
+        didSet {
+            guard dimmingClearExtension != oldValue else { return }
+            resetDimmingImage()
+        }
     }
 
     /// Allows reflection dimming to overflow while clipping only the actual blur backdrop.
