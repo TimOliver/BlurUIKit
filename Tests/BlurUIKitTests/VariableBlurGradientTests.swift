@@ -198,6 +198,49 @@ final class VariableBlurGradientTests: XCTestCase {
     }
 
     @MainActor
+    func testReassigningCurrentValuesKeepsTheInstalledBlur() throws {
+        try withBlur { blur in
+            blur.minimumBlurRadius = 3
+            blur.maximumBlurRadius = 30
+            blur.blurMaximumRadiusInset = .relative(fraction: 0.25)
+            blur.dimmingAlpha = .constant(alpha: 0.6)
+            blur.dimmingFullColorInset = .absolute(position: 20)
+            blur.dimmingClearExtension = .relative(fraction: 0.5)
+
+            let reassignments: [(String, (VariableBlurView) -> Void)] = [
+                ("direction", { $0.direction = .up }),
+                ("minimumBlurRadius", { $0.minimumBlurRadius = 3 }),
+                ("maximumBlurRadius", { $0.maximumBlurRadius = 30 }),
+                ("blurMaximumRadiusInset", { $0.blurMaximumRadiusInset = .relative(fraction: 0.25) }),
+                ("dimmingAlpha", { $0.dimmingAlpha = .constant(alpha: 0.6) }),
+                ("dimmingFullColorInset", { $0.dimmingFullColorInset = .absolute(position: 20) }),
+                ("dimmingClearExtension", { $0.dimmingClearExtension = .relative(fraction: 0.5) }),
+            ]
+            for (name, reassign) in reassignments {
+                blur.layoutIfNeeded()
+                let installedFilter = try filter(blur)
+                let installedDimming = try dimmingView(blur).image
+                reassign(blur)
+                blur.layoutIfNeeded()
+                XCTAssertTrue((try filter(blur)) === installedFilter, "\(name) rebuilt the blur filter")
+                XCTAssertTrue((try dimmingView(blur).image) === installedDimming, "\(name) rebuilt the dimming image")
+            }
+        }
+    }
+
+    func testConfigurationTypesAreHashableAndSendable() {
+        // Compile-time check. Swift 6 clients need these to be Sendable to store them in static
+        // constants, though Sendable is only enforced when this target is built in Swift 6 mode.
+        requireHashableAndSendable(VariableBlurView.Direction.self)
+        requireHashableAndSendable(VariableBlurView.GradientSizing.self)
+        requireHashableAndSendable(VariableBlurView.DimmingAlpha.self)
+        XCTAssertEqual(VariableBlurView.GradientSizing.relative(fraction: 0.5), .relative(fraction: 0.5))
+        XCTAssertNotEqual(VariableBlurView.GradientSizing.relative(fraction: 0.5), .absolute(position: 0.5))
+        XCTAssertNotEqual(VariableBlurView.DimmingAlpha.constant(alpha: 0.5),
+                          .interfaceStyle(lightModeAlpha: 0.5, darkModeAlpha: 0.5))
+    }
+
+    @MainActor
     func testSwiftUIModifiersConfigureAndUpdateTheSameProperties() async throws {
         let root = VariableBlur(direction: .up)
             .minimumBlurRadius(3)
@@ -225,6 +268,36 @@ final class VariableBlurGradientTests: XCTestCase {
     }
 
     @MainActor
+    func testSwiftUIUpdateWithUnchangedConfigurationKeepsTheInstalledBlur() async throws {
+        // Builds a fresh description each time, as a parent view's body evaluation does.
+        func makeRoot() -> VariableBlur {
+            VariableBlur(direction: .up)
+                .minimumBlurRadius(3)
+                .maximumBlurRadius(60)
+                .blurMaximumRadiusInset(.relative(fraction: 0.25))
+                .dimmingTintColor(.red)
+                .dimmingAlpha(.constant(alpha: 0.9))
+                .dimmingClearExtension(.relative(fraction: 0.5))
+                .dimmingFullColorInset(.relative(fraction: 0.5))
+        }
+        let controller = UIHostingController(rootView: makeRoot())
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 200, height: 200))
+        window.rootViewController = controller
+        window.isHidden = false
+        defer { window.isHidden = true }
+        controller.view.layoutIfNeeded()
+        try await Task.sleep(nanoseconds: 100_000_000)
+        let blur = try XCTUnwrap(findBlur(in: controller.view))
+        let installedFilter = try filter(blur)
+        let installedDimming = try dimmingView(blur).image
+
+        controller.rootView = makeRoot()
+        try await Task.sleep(nanoseconds: 100_000_000)
+        XCTAssertTrue((try filter(blur)) === installedFilter)
+        XCTAssertTrue((try dimmingView(blur).image) === installedDimming)
+    }
+
+    @MainActor
     private func withBlur(_ body: (VariableBlurView) throws -> Void) rethrows {
         let host = UIView()
         let blur = VariableBlurView(frame: CGRect(x: 0, y: 0, width: 200, height: 200))
@@ -232,6 +305,8 @@ final class VariableBlurGradientTests: XCTestCase {
         host.addSubview(blur)
         try withExtendedLifetime(host) { try body(blur) }
     }
+
+    private func requireHashableAndSendable<T: Hashable & Sendable>(_: T.Type) {}
 
     private func assertFraction(_ sizing: VariableBlurView.GradientSizing?, _ expected: CGFloat,
                                 file: StaticString = #filePath, line: UInt = #line) {
