@@ -39,7 +39,7 @@ public class VariableBlurView: UIView {
 
     /// An absolute or relative amount of sizing used to customize the appearance of the blur and gradient views.
     public enum GradientSizing {
-        // The amount of on-screen UI points starting from the origin, as a static value.
+        // A distance in on-screen UI points.
         case absolute(position: CGFloat)
         // A relative fraction of this view's size along the gradient direction. (0.0 = 0%, 1.5 = 150%)
         case relative(fraction: CGFloat)
@@ -68,8 +68,10 @@ public class VariableBlurView: UIView {
         didSet { resetBlurMask() }
     }
 
-    /// An optional amount of insetting from the opaque side where the blur reaches 100%.
-    public var blurStartingInset: GradientSizing? {
+    /// Distance inward from the maximum-radius edge where maximum blur is reached.
+    /// The remaining region stays at maximum blur. Fractions use the view's bounds.
+    /// Insets are clamped to the view's size. Nil means maximum blur at the edge.
+    public var blurMaximumRadiusInset: GradientSizing? {
         didSet { resetBlurMask() }
     }
 
@@ -87,20 +89,27 @@ public class VariableBlurView: UIView {
         didSet { setNeedsLayout() }
     }
 
-    /// An optional overshoot value to allow the colored gradient to extend outside the blur view's bounds
-    public var dimmingOvershoot: GradientSizing? = .relative(fraction: 1.25) {
+    /// Distance inward from the full-color edge where dimming reaches full strength.
+    /// Absolute values are points; fractions use the original view's bounds,
+    /// independent of `dimmingClearExtension`. The remaining region stays at full color.
+    /// Insets are clamped to the view's size. Nil means full color at the edge.
+    public var dimmingFullColorInset: GradientSizing? {
         didSet { resetDimmingImage() }
     }
 
-    /// An optional inset position where the colored gradient hits 100% of its transition.
-    public var dimmingStartingInset: GradientSizing? {
+    /// Extra space outside the clear edge over which dimming transitions from alpha zero.
+    /// Absolute values add points; relative values add a fraction of the view's size
+    /// (0.25 means 25% extra). Nil means no extension. Negative/non-finite amounts use zero.
+    /// Defaults to 25% extra. This never enlarges the blur backdrop.
+    /// The receiver and its ancestors must allow overflow for the extension to be visible.
+    public var dimmingClearExtension: GradientSizing? = .relative(fraction: 0.25) {
         didSet { resetDimmingImage() }
     }
 
-    /// The blur mask's gradient-bearing length, anchored to its maximum-radius edge.
-    /// The remaining space stays at minimum blur. This does not affect dimming.
-    internal var blurGradientExtent: GradientSizing? {
-        didSet { resetBlurMask() }
+    /// Allows reflection dimming to overflow while clipping only the actual blur backdrop.
+    internal var clipsBlurToBounds: Bool {
+        get { blurEffectView.clipsToBounds }
+        set { blurEffectView.clipsToBounds = newValue }
     }
 
     /// The internal visual effect view that provides the blur
@@ -256,18 +265,18 @@ public class VariableBlurView: UIView {
         }
     }
 
-    // Layout the dimming view, taking direction and overshoot into account
+    // Extend only the clear edge of the dimming view.
     private func dimmingViewFrame() -> CGRect {
         var frame = bounds
         switch direction {
         case .down, .up:
-            let adjustedHeight = applyOvershoot(to: frame.height, overshoot: dimmingOvershoot)
+            let adjustedHeight = gradientLength(clearExtension: dimmingClearExtension)
             frame.size.height = adjustedHeight
-            frame.origin.y = direction == .up ? -(adjustedHeight - bounds.height) : 0.0
+            if direction == .up { frame.origin.y -= adjustedHeight - bounds.height }
         case .left, .right:
-            let adjustedWidth = applyOvershoot(to: frame.width, overshoot: dimmingOvershoot)
+            let adjustedWidth = gradientLength(clearExtension: dimmingClearExtension)
             frame.size.width = adjustedWidth
-            frame.origin.x = direction == .left ? -(adjustedWidth - bounds.width) : 0.0
+            if direction == .right { frame.origin.x -= adjustedWidth - bounds.width }
         }
         return frame
     }
@@ -330,19 +339,18 @@ extension VariableBlurView {
     private func generateImagesAsNeeded() {
         // Update the blur view's gradient mask
         if gradientMaskImage == nil {
-            gradientMaskImage = fetchGradientImage(startingInset: blurStartingInset,
-                                                   extent: blurGradientExtent,
+            gradientMaskImage = fetchGradientImage(fullStrengthInset: blurMaximumRadiusInset,
                                                    minimumAlpha: minimumBlurMaskAlpha)
             updateBlurFilter()
         }
 
-        // Dimming has its own full-length 0-to-1 gradient, independent of the blur range/extent.
+        // Dimming has its own 0-to-1 gradient, independent of the blur radius range.
         // Its overall opacity is applied to the image view by updateDimmingViewAlpha().
         if dimmingTintColor != nil, dimmingView?.image == nil {
             makeDimmingViewIfNeeded()
-            if let dimmingImage = fetchGradientImage(startingInset: dimmingStartingInset,
+            if let dimmingImage = fetchGradientImage(fullStrengthInset: dimmingFullColorInset,
                                                      smooth: true,
-                                                     overshoot: dimmingOvershoot) {
+                                                     clearExtension: dimmingClearExtension) {
                 dimmingView?.image = UIImage(cgImage: dimmingImage).withRenderingMode(.alwaysTemplate)
             }
         }
@@ -350,10 +358,9 @@ extension VariableBlurView {
 
     /// Generates a gradient bitmap to be used as a blur mask or dimming gradient image.
     private func fetchGradientImage(
-        startingInset: GradientSizing?,
+        fullStrengthInset: GradientSizing?,
         smooth: Bool = false,
-        overshoot: GradientSizing? = nil,
-        extent: GradientSizing? = nil,
+        clearExtension: GradientSizing? = nil,
         minimumAlpha: CGFloat = 0.0
     ) -> CGImage? {
         // Skip if we're not sized yet.
@@ -361,36 +368,11 @@ extension VariableBlurView {
 
         // Determine size based on direction (1 pixel wide/tall strip)
         let isVertical = direction == .up || direction == .down
-        let baseLength = isVertical ? bounds.height : bounds.width
-        let length = Int(applyOvershoot(to: baseLength, overshoot: overshoot).rounded(.up))
+        let imageLength = gradientLength(clearExtension: clearExtension)
+        guard let length = Int(exactly: imageLength), length > 0 else { return nil }
 
-        guard length > 0 else { return nil }
-
-        // Resolve the active gradient length against the unmodified view bounds.
-        let activeLength: Int = {
-            guard let extent else { return length }
-            let value: CGFloat
-            switch extent {
-            case .absolute(let position):
-                value = position
-            case .relative(let fraction):
-                value = baseLength * fraction
-            }
-            guard value.isFinite else { return length }
-            return min(max(Int(value.rounded(.up)), 0), length)
-        }()
-
-        // Determine the start location within the active gradient.
-        let startLocation: CGFloat = {
-            guard let startingInset else { return 0.0 }
-            switch startingInset {
-            case .absolute(let position):
-                guard activeLength > 0 else { return 0.0 }
-                return position / CGFloat(activeLength)
-            case .relative(let fraction):
-                return fraction
-            }
-        }()
+        // Both inset fractions refer to the original bounds, even when dimming extends outside.
+        let startLocation = insetPoints(fullStrengthInset) / CGFloat(length)
 
         // For up/right directions, the gradient runs in reverse (transparent to opaque)
         let reversed = direction == .up || direction == .right
@@ -399,7 +381,6 @@ extension VariableBlurView {
             length: length,
             isVertical: isVertical,
             startLocation: startLocation,
-            activeLength: activeLength,
             reversed: reversed,
             smooth: smooth,
             minimumAlpha: minimumAlpha
@@ -422,14 +403,36 @@ extension VariableBlurView {
         return max(maximumBlurRadius, 0.0)
     }
 
-    /// Apply an optional overshoot value to this dimension
-    private func applyOvershoot(to value: CGFloat, overshoot: GradientSizing?) -> CGFloat {
-        guard let overshoot else { return value }
-        switch overshoot {
-        case .absolute(position: let position):
-            return (value + position).rounded(.up)
-        case .relative(fraction: let fraction):
-            return (value * fraction).rounded(.up)
+    private var gradientAxisSize: CGFloat {
+        direction == .up || direction == .down ? bounds.height : bounds.width
+    }
+
+    /// Resolve an inset against the original bounds, not the extended gradient image.
+    private func insetPoints(_ inset: GradientSizing?) -> CGFloat {
+        guard let inset else { return 0 }
+        let size = gradientAxisSize
+        let points: CGFloat
+        switch inset {
+        case .absolute(let position): points = position
+        case .relative(let fraction): points = min(max(fraction.isFinite ? fraction : 0, 0), 1) * size
         }
+        return min(max(points.isFinite ? points : 0, 0), size)
+    }
+
+    /// A bitmap-sized gradient with optional additional space at its clear edge.
+    private func gradientLength(clearExtension extensionAmount: GradientSizing?) -> CGFloat {
+        let size = gradientAxisSize
+        let extra: CGFloat
+        switch extensionAmount {
+        case .absolute(let position):
+            extra = position.isFinite ? max(position, 0) : 0
+        case .relative(let fraction):
+            extra = size * (fraction.isFinite ? max(fraction, 0) : 0)
+        case nil:
+            extra = 0
+        }
+        let length = size + extra
+        guard length.isFinite, length < CGFloat(Int.max) else { return size.rounded(.up) }
+        return length.rounded(.up)
     }
 }

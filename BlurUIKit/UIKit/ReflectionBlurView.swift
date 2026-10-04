@@ -63,10 +63,11 @@ public class ReflectionBlurView: UIView {
         set { blurView.minimumBlurRadius = newValue }
     }
 
-    /// The position at which the variable blur begins transitioning.
-    public var blurStartingInset: VariableBlurView.GradientSizing? {
-        get { blurView.blurStartingInset }
-        set { blurView.blurStartingInset = newValue }
+    /// Distance inward from the bottom edge where maximum blur is reached.
+    /// Fractions use the reflection region's height.
+    public var blurMaximumRadiusInset: VariableBlurView.GradientSizing? {
+        get { blurView.blurMaximumRadiusInset }
+        set { blurView.blurMaximumRadiusInset = newValue }
     }
 
     /// An optional color gradient used to dim the reflection as it moves away from the source.
@@ -81,10 +82,19 @@ public class ReflectionBlurView: UIView {
         set { blurView.dimmingAlpha = newValue }
     }
 
-    /// The position at which the dimming gradient begins transitioning.
-    public var dimmingStartingInset: VariableBlurView.GradientSizing? {
-        get { blurView.dimmingStartingInset }
-        set { blurView.dimmingStartingInset = newValue }
+    /// Distance inward from the bottom edge where dimming reaches full strength.
+    /// Fractions use the reflection region's height, excluding any clear-side extension.
+    public var dimmingFullColorInset: VariableBlurView.GradientSizing? {
+        get { blurView.dimmingFullColorInset }
+        set { blurView.dimmingFullColorInset = newValue }
+    }
+
+    /// Extra dimming space above the reflection region, behind the source content.
+    /// Fractions specify extra space relative to the reflection region's height.
+    /// Defaults to nil (no extension). The blur backdrop remains in the bottom half.
+    public var dimmingClearExtension: VariableBlurView.GradientSizing? {
+        get { blurView.dimmingClearExtension }
+        set { blurView.dimmingClearExtension = newValue }
     }
 
     // MARK: - Public Methods
@@ -107,10 +117,9 @@ public class ReflectionBlurView: UIView {
     private let blurView: VariableBlurView = {
         let blurView = VariableBlurView()
         blurView.direction = .up
-        blurView.maximumBlurRadius = 4.5
-        blurView.blurGradientExtent = .relative(fraction: 1.0)
-        blurView.dimmingOvershoot = nil
-        blurView.clipsToBounds = true
+        blurView.maximumBlurRadius = 40
+        blurView.dimmingClearExtension = nil
+        blurView.clipsBlurToBounds = true
         return blurView
     }()
 

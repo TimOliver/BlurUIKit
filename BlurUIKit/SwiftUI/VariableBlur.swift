@@ -54,11 +54,11 @@ public struct VariableBlur: UIViewRepresentable {
     private var direction: Direction
     private var minimumBlurRadius: CGFloat = 0.0
     private var maximumBlurRadius: CGFloat = 3.5
-    private var blurStartingInset: GradientSizing?
+    private var blurMaximumRadiusInset: GradientSizing?
     private var dimmingTintColor: UIColor? = .systemBackground
     private var dimmingAlpha: DimmingAlpha? = .interfaceStyle(lightModeAlpha: 0.5, darkModeAlpha: 0.25)
-    private var dimmingOvershoot: GradientSizing? = .relative(fraction: 1.25)
-    private var dimmingStartingInset: GradientSizing?
+    private var dimmingClearExtension: GradientSizing? = .relative(fraction: 0.25)
+    private var dimmingFullColorInset: GradientSizing?
     private var passesTouchesThrough: Bool = true
 
     // MARK: - Initializer
@@ -66,7 +66,7 @@ public struct VariableBlur: UIViewRepresentable {
     /// Creates a new variable blur view.
     /// - Parameter direction: The direction the blur gradient flows, determining which edge
     ///   starts at minimum intensity and which reaches full blur intensity. For example, `.down`
-    ///   starts at minimum intensity at the top and reaches full blur at the bottom, making it ideal for
+    ///   starts at maximum intensity at the top and reaches minimum blur at the bottom, making it ideal for
     ///   status bar overlays. Defaults to `.down`.
     public init(direction: Direction = .down) {
         self.direction = direction
@@ -109,9 +109,9 @@ public struct VariableBlur: UIViewRepresentable {
     /// - Parameter inset: The distance from the opaque edge, expressed as either an absolute
     ///   point value or a fraction of the view's size. Pass `nil` to span the full view. Defaults to `nil`.
     /// - Returns: A modified `VariableBlur` with the updated blur inset.
-    public func blurStartingInset(_ inset: GradientSizing?) -> VariableBlur {
+    public func blurMaximumRadiusInset(_ inset: GradientSizing?) -> VariableBlur {
         var copy = self
-        copy.blurStartingInset = inset
+        copy.blurMaximumRadiusInset = inset
         return copy
     }
 
@@ -146,34 +146,23 @@ public struct VariableBlur: UIViewRepresentable {
         return copy
     }
 
-    /// Sets an overshoot distance that extends the dimming gradient beyond the blur view's bounds.
-    ///
-    /// This allows the colored gradient to bleed past the edge of the blur view, creating a
-    /// smoother visual transition into the surrounding content. The view's `clipsToBounds` is
-    /// disabled to allow this.
-    ///
-    /// - Parameter overshoot: The overshoot distance, expressed as either an absolute point
-    ///   value or a fraction of the view's size. Pass `nil` to confine the dimming gradient
-    ///   to the view's bounds. Defaults to `.relative(fraction: 1.25)`.
-    /// - Returns: A modified `VariableBlur` with the updated dimming overshoot.
-    public func dimmingOvershoot(_ overshoot: GradientSizing?) -> VariableBlur {
+    /// Adds dimming space outside the clear edge, without extending the blur backdrop.
+    /// Relative values are extra fractions of the view's size (0.25 means 25% extra).
+    /// Absolute values are extra points. Nil disables extension; the default is 25% extra.
+    /// Negative/non-finite amounts use zero. Ancestors must allow overflow to display it.
+    public func dimmingClearExtension(_ extensionAmount: GradientSizing?) -> VariableBlur {
         var copy = self
-        copy.dimmingOvershoot = overshoot
+        copy.dimmingClearExtension = extensionAmount
         return copy
     }
 
-    /// Sets an inset from the opaque edge where the dimming gradient reaches full intensity.
-    ///
-    /// Similar to ``blurStartingInset(_:)``, but applied to the dimming gradient independently.
-    /// This allows the dimming and blur gradients to have different transition profiles.
-    ///
-    /// - Parameter inset: The distance from the opaque edge, expressed as either an absolute
-    ///   point value or a fraction of the view's size. Pass `nil` to span the full view.
-    ///   Defaults to `nil`.
-    /// - Returns: A modified `VariableBlur` with the updated dimming inset.
-    public func dimmingStartingInset(_ inset: GradientSizing?) -> VariableBlur {
+    /// Sets the distance inward from the full-color edge where dimming reaches full strength.
+    /// Fractions use the original view's bounds, independent of the clear-side extension.
+    /// The remaining region stays at full color. Insets are clamped to the view's size.
+    /// Nil means full color at the edge.
+    public func dimmingFullColorInset(_ inset: GradientSizing?) -> VariableBlur {
         var copy = self
-        copy.dimmingStartingInset = inset
+        copy.dimmingFullColorInset = inset
         return copy
     }
     
@@ -188,7 +177,7 @@ public struct VariableBlur: UIViewRepresentable {
     /// decorative overlay that should not interfere with user interaction.
     ///
     /// - Parameter bool: A Boolean value indicating whether touches should
-    ///   pass through the blur view. Defaults to `false`.
+    ///   pass through the blur view. Defaults to `true`.
     /// - Returns: A modified `VariableBlur` with updated touch pass-through behavior.
     public func passesTouchesThrough(_ bool: Bool) -> VariableBlur {
         var copy = self
@@ -216,11 +205,11 @@ public struct VariableBlur: UIViewRepresentable {
         view.direction = direction
         view.minimumBlurRadius = minimumBlurRadius
         view.maximumBlurRadius = maximumBlurRadius
-        view.blurStartingInset = blurStartingInset
+        view.blurMaximumRadiusInset = blurMaximumRadiusInset
         view.dimmingTintColor = dimmingTintColor
         view.dimmingAlpha = dimmingAlpha
-        view.dimmingOvershoot = dimmingOvershoot
-        view.dimmingStartingInset = dimmingStartingInset
+        view.dimmingClearExtension = dimmingClearExtension
+        view.dimmingFullColorInset = dimmingFullColorInset
         view.isUserInteractionEnabled = !passesTouchesThrough
     }
 }
