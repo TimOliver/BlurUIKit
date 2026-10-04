@@ -109,10 +109,8 @@ public class VariableBlurView: UIView {
     /// independent of `dimmingClearExtension`. The remaining region stays at full color.
     /// Insets are clamped to the view's size. Nil means full color at the edge.
     public var dimmingFullColorInset: GradientSizing? {
-        didSet {
-            guard dimmingFullColorInset != oldValue else { return }
-            resetDimmingImage()
-        }
+        get { dimmingInset.value }
+        set { dimmingInset = (newValue, false) }
     }
 
     /// Extra space outside the clear edge over which dimming transitions from alpha zero.
@@ -147,6 +145,15 @@ public class VariableBlurView: UIView {
 
     /// An optional dimming gradient shown along with the blur view
     private var dimmingView: UIImageView?
+
+    /// The dimming inset, and whether its fractions span the clear extension as the deprecated
+    /// `dimmingStartingInset` did. Stored together so switching between the two resets only once.
+    private var dimmingInset: (value: GradientSizing?, spansClearExtension: Bool) = (nil, false) {
+        didSet {
+            guard dimmingInset != oldValue else { return }
+            resetDimmingImage()
+        }
+    }
 
     /// Cached references to internal UIVisualEffectView subviews
     private weak var backdropView: UIView?
@@ -369,7 +376,8 @@ extension VariableBlurView {
         // Its overall opacity is applied to the image view by updateDimmingViewAlpha().
         if dimmingTintColor != nil, dimmingView?.image == nil {
             makeDimmingViewIfNeeded()
-            if let dimmingImage = fetchGradientImage(fullStrengthInset: dimmingFullColorInset,
+            if let dimmingImage = fetchGradientImage(fullStrengthInset: dimmingInset.value,
+                                                     insetSpansClearExtension: dimmingInset.spansClearExtension,
                                                      smooth: true,
                                                      clearExtension: dimmingClearExtension) {
                 dimmingView?.image = UIImage(cgImage: dimmingImage).withRenderingMode(.alwaysTemplate)
@@ -380,6 +388,7 @@ extension VariableBlurView {
     /// Generates a gradient bitmap to be used as a blur mask or dimming gradient image.
     private func fetchGradientImage(
         fullStrengthInset: GradientSizing?,
+        insetSpansClearExtension: Bool = false,
         smooth: Bool = false,
         clearExtension: GradientSizing? = nil,
         minimumAlpha: CGFloat = 0.0
@@ -392,8 +401,10 @@ extension VariableBlurView {
         let imageLength = gradientLength(clearExtension: clearExtension)
         guard let length = Int(exactly: imageLength), length > 0 else { return nil }
 
-        // Both inset fractions refer to the original bounds, even when dimming extends outside.
-        let startLocation = insetPoints(fullStrengthInset) / CGFloat(length)
+        // Both inset fractions refer to the original bounds, even when dimming extends outside,
+        // unless the inset was set through the deprecated `dimmingStartingInset`.
+        let insetSpan = insetSpansClearExtension ? imageLength : gradientAxisSize
+        let startLocation = insetPoints(fullStrengthInset, within: insetSpan) / CGFloat(length)
 
         // For up/right directions, the gradient runs in reverse (transparent to opaque)
         let reversed = direction == .up || direction == .right
@@ -428,16 +439,15 @@ extension VariableBlurView {
         direction == .up || direction == .down ? bounds.height : bounds.width
     }
 
-    /// Resolve an inset against the original bounds, not the extended gradient image.
-    private func insetPoints(_ inset: GradientSizing?) -> CGFloat {
+    /// Resolve an inset to points, with fractions of and clamping to the provided span.
+    private func insetPoints(_ inset: GradientSizing?, within span: CGFloat) -> CGFloat {
         guard let inset else { return 0 }
-        let size = gradientAxisSize
         let points: CGFloat
         switch inset {
         case .absolute(let position): points = position
-        case .relative(let fraction): points = min(max(fraction.isFinite ? fraction : 0, 0), 1) * size
+        case .relative(let fraction): points = min(max(fraction.isFinite ? fraction : 0, 0), 1) * span
         }
-        return min(max(points.isFinite ? points : 0, 0), size)
+        return min(max(points.isFinite ? points : 0, 0), span)
     }
 
     /// A bitmap-sized gradient with optional additional space at its clear edge.
@@ -455,5 +465,42 @@ extension VariableBlurView {
         let length = size + extra
         guard length.isFinite, length < CGFloat(Int.max) else { return size.rounded(.up) }
         return length.rounded(.up)
+    }
+}
+
+// MARK: Deprecated
+
+@available(iOS 14, *)
+extension VariableBlurView {
+    /// An optional amount of insetting from the opaque side where the blur reaches 100%.
+    @available(*, deprecated, renamed: "blurMaximumRadiusInset")
+    public var blurStartingInset: GradientSizing? {
+        get { blurMaximumRadiusInset }
+        set { blurMaximumRadiusInset = newValue }
+    }
+
+    /// The total length of the dimming gradient, extending past the view's clear edge.
+    /// Relative values include the view itself, so `.relative(fraction: 1.25)` adds 25%.
+    @available(*, deprecated, message: "Use dimmingClearExtension, whose relative values measure only the extra space: .relative(fraction: 1.25) becomes .relative(fraction: 0.25).")
+    public var dimmingOvershoot: GradientSizing? {
+        get {
+            guard case .relative(let fraction) = dimmingClearExtension else { return dimmingClearExtension }
+            return .relative(fraction: fraction + 1.0)
+        }
+        set {
+            guard case .relative(let fraction) = newValue else {
+                dimmingClearExtension = newValue
+                return
+            }
+            dimmingClearExtension = .relative(fraction: fraction - 1.0)
+        }
+    }
+
+    /// An optional inset position where the colored gradient hits 100% of its transition.
+    /// Relative values are fractions of the whole dimming gradient, including any overshoot.
+    @available(*, deprecated, message: "Use dimmingFullColorInset, whose relative values are fractions of the view's size rather than of the extended dimming gradient.")
+    public var dimmingStartingInset: GradientSizing? {
+        get { dimmingInset.value }
+        set { dimmingInset = (newValue, true) }
     }
 }

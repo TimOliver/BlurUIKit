@@ -297,6 +297,86 @@ final class VariableBlurGradientTests: XCTestCase {
         XCTAssertTrue((try dimmingView(blur).image) === installedDimming)
     }
 
+    // MARK: - Deprecated API
+
+    // Marked deprecated so exercising the deprecated API doesn't produce warnings.
+
+    @available(*, deprecated)
+    @MainActor
+    func testDeprecatedBlurStartingInsetForwardsToMaximumRadiusInset() {
+        withBlur { blur in
+            blur.blurStartingInset = .relative(fraction: 0.5)
+            XCTAssertEqual(blur.blurMaximumRadiusInset, .relative(fraction: 0.5))
+            blur.blurMaximumRadiusInset = .absolute(position: 20)
+            XCTAssertEqual(blur.blurStartingInset, .absolute(position: 20))
+        }
+    }
+
+    @available(*, deprecated)
+    @MainActor
+    func testDeprecatedDimmingOvershootMeasuresTheTotalLength() {
+        withBlur { blur in
+            // Relative overshoots described the total length; clear extensions describe only the extra space.
+            blur.dimmingOvershoot = .relative(fraction: 1.25)
+            XCTAssertEqual(blur.dimmingClearExtension, .relative(fraction: 0.25))
+            blur.dimmingOvershoot = .absolute(position: 40)
+            XCTAssertEqual(blur.dimmingClearExtension, .absolute(position: 40))
+            blur.dimmingOvershoot = nil
+            XCTAssertNil(blur.dimmingClearExtension)
+
+            blur.dimmingClearExtension = .relative(fraction: 0.5)
+            XCTAssertEqual(blur.dimmingOvershoot, .relative(fraction: 1.5))
+        }
+    }
+
+    @available(*, deprecated)
+    @MainActor
+    func testDeprecatedDimmingStartingInsetMeasuresTheExtendedGradient() throws {
+        try withBlur { blur in
+            // Set before the overshoot, so the inset must resolve against the final extended length.
+            blur.dimmingStartingInset = .relative(fraction: 0.5)
+            blur.dimmingOvershoot = .relative(fraction: 1.5)
+            blur.layoutIfNeeded()
+            // Half of the 300pt gradient is full color, starting 50pt into the 200pt view.
+            XCTAssertEqual(try fullColorPosition(blur), 50)
+
+            // The same value through the new property measures half of the view instead.
+            blur.dimmingFullColorInset = .relative(fraction: 0.5)
+            blur.layoutIfNeeded()
+            XCTAssertEqual(try fullColorPosition(blur), 100)
+
+            // Absolute insets could reach past the view's edge into the extension.
+            blur.dimmingStartingInset = .absolute(position: 250)
+            blur.layoutIfNeeded()
+            XCTAssertEqual(try fullColorPosition(blur), -50)
+        }
+    }
+
+    @available(*, deprecated)
+    @MainActor
+    func testDeprecatedSwiftUIModifiersKeepTheirOriginalMeaning() async throws {
+        let root = VariableBlur(direction: .up)
+            .blurStartingInset(.relative(fraction: 0.25))
+            .dimmingStartingInset(.relative(fraction: 0.5))
+            .dimmingOvershoot(.relative(fraction: 1.5))
+        let controller = UIHostingController(rootView: root)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 200, height: 200))
+        window.rootViewController = controller
+        window.isHidden = false
+        defer { window.isHidden = true }
+        controller.view.layoutIfNeeded()
+        try await Task.sleep(nanoseconds: 100_000_000)
+        let blur = try XCTUnwrap(findBlur(in: controller.view))
+        XCTAssertEqual(blur.blurMaximumRadiusInset, .relative(fraction: 0.25))
+        XCTAssertEqual(blur.dimmingClearExtension, .relative(fraction: 0.5))
+        // Half of a gradient 150% of the view's height is full color.
+        XCTAssertEqual(try fullColorPosition(blur), blur.bounds.height * 0.25, accuracy: 1)
+
+        controller.rootView = root.dimmingFullColorInset(.relative(fraction: 0.5))
+        try await Task.sleep(nanoseconds: 100_000_000)
+        XCTAssertEqual(try fullColorPosition(blur), blur.bounds.height * 0.5, accuracy: 1)
+    }
+
     @MainActor
     private func withBlur(_ body: (VariableBlurView) throws -> Void) rethrows {
         let host = UIView()

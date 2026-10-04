@@ -61,6 +61,10 @@ public struct VariableBlur: UIViewRepresentable {
     private var dimmingFullColorInset: GradientSizing?
     private var passesTouchesThrough: Bool = true
 
+    /// Set by the deprecated `dimmingStartingInset(_:)` to apply its inset through the matching
+    /// deprecated `VariableBlurView` property, which preserves the inset's original meaning.
+    private var applyDeprecatedDimmingStartingInset: ((VariableBlurView) -> Void)?
+
     // MARK: - Initializer
 
     /// Creates a new variable blur view.
@@ -163,6 +167,7 @@ public struct VariableBlur: UIViewRepresentable {
     public func dimmingFullColorInset(_ inset: GradientSizing?) -> VariableBlur {
         var copy = self
         copy.dimmingFullColorInset = inset
+        copy.applyDeprecatedDimmingStartingInset = nil
         return copy
     }
     
@@ -209,7 +214,39 @@ public struct VariableBlur: UIViewRepresentable {
         view.dimmingTintColor = dimmingTintColor
         view.dimmingAlpha = dimmingAlpha
         view.dimmingClearExtension = dimmingClearExtension
-        view.dimmingFullColorInset = dimmingFullColorInset
+        if let applyDeprecatedDimmingStartingInset {
+            applyDeprecatedDimmingStartingInset(view)
+        } else {
+            view.dimmingFullColorInset = dimmingFullColorInset
+        }
         view.isUserInteractionEnabled = !passesTouchesThrough
+    }
+}
+
+// MARK: - Deprecated Modifiers
+
+@available(iOS 14, *)
+extension VariableBlur {
+    /// Sets an inset from the opaque edge where the blur gradient reaches full intensity.
+    @available(*, deprecated, renamed: "blurMaximumRadiusInset(_:)")
+    public func blurStartingInset(_ inset: GradientSizing?) -> VariableBlur {
+        blurMaximumRadiusInset(inset)
+    }
+
+    /// Sets the total length of the dimming gradient, extending past the view's clear edge.
+    /// Relative values include the view itself, so `.relative(fraction: 1.25)` adds 25%.
+    @available(*, deprecated, message: "Use dimmingClearExtension(_:), whose relative values measure only the extra space: .relative(fraction: 1.25) becomes .relative(fraction: 0.25).")
+    public func dimmingOvershoot(_ overshoot: GradientSizing?) -> VariableBlur {
+        guard case .relative(let fraction) = overshoot else { return dimmingClearExtension(overshoot) }
+        return dimmingClearExtension(.relative(fraction: fraction - 1.0))
+    }
+
+    /// Sets an inset from the opaque edge where the dimming gradient reaches full intensity.
+    /// Relative values are fractions of the whole dimming gradient, including any overshoot.
+    @available(*, deprecated, message: "Use dimmingFullColorInset(_:), whose relative values are fractions of the view's size rather than of the extended dimming gradient.")
+    public func dimmingStartingInset(_ inset: GradientSizing?) -> VariableBlur {
+        var copy = dimmingFullColorInset(inset)
+        copy.applyDeprecatedDimmingStartingInset = { $0.dimmingStartingInset = inset }
+        return copy
     }
 }
