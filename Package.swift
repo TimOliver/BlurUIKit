@@ -27,7 +27,7 @@ let package = Package(
         ),
         .testTarget(
             name: "BlurUIKitTests",
-            dependencies: ["BlurUIKit"],
+            dependencies: ["BlurUIKit", "BlurSwiftUI"],
             path: "Tests/BlurUIKitTests"
         ),
     ]

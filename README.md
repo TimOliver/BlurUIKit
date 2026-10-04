@@ -33,8 +33,12 @@ let blurView = VariableBlurView()
 // Set a tint color for the colored gradient.
 blurView.dimmingTintColor = .red
 
-// The tint color can 'overshoot' the blur view to add more gradual transition
-blurView.dimmingOvershoot = .relative(fraction: 1.25)
+// Extend the clear end of the dimming gradient by 25% of the view's size.
+blurView.dimmingClearExtension = .relative(fraction: 0.25)
+
+// Reach maximum blur and full dimming color halfway inside the view.
+blurView.blurMaximumRadiusInset = .relative(fraction: 0.5)
+blurView.dimmingFullColorInset = .relative(fraction: 0.5)
 
 ```
 
@@ -45,9 +49,21 @@ blurView.dimmingOvershoot = .relative(fraction: 1.25)
 // Use the VariableBlur view with chainable modifiers
 VariableBlur(direction: .down)
     .dimmingTintColor(.red)
-    .dimmingOvershoot(.relative(fraction: 1.25))
+    .dimmingClearExtension(.relative(fraction: 0.25))
+    .blurMaximumRadiusInset(.relative(fraction: 0.5))
+    .dimmingFullColorInset(.relative(fraction: 0.5))
 
 ```
+
+The blur gradient always fills the view, transitioning from `minimumBlurRadius` to
+`maximumBlurRadius`. `blurMaximumRadiusInset` moves the point where maximum blur is
+reached inward from the maximum-radius edge; the remaining region stays at maximum blur.
+
+The dimming gradient independently transitions from clear to `dimmingTintColor`, with
+`dimmingAlpha` applied to its overall opacity. `dimmingFullColorInset` moves its full-color
+point inward, while `dimmingClearExtension` stretches only its clear end outside the view.
+Relative values for both use the original view bounds. Dimming extension does not enlarge
+the blur backdrop; the view and its ancestors must allow overflow to display it.
 
 ### UIView Blur Extension
 
