@@ -60,16 +60,21 @@ final class ReflectionBlurViewController: UIViewController {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
 
-        reflectionView.frame = view.bounds
+        let bounds: CGRect = {
+            var frame = view.bounds
+            frame.origin.y += view.safeAreaInsets.top
+            frame.size.height -= view.safeAreaInsets.top
+            return frame
+        }()
+
+        reflectionView.frame = bounds
         reflectionView.layoutIfNeeded()
 
         let contentBounds = reflectionView.contentView.bounds
-        let midpointMargin: CGFloat = 48.0
-        let maximumContentHeight = max(contentBounds.height - view.safeAreaInsets.top - midpointMargin, 0.0)
+        let midpointMargin: CGFloat = 32.0
+        let maximumContentHeight = max(contentBounds.height - midpointMargin, 0.0)
 
-        let itemWidth = max(min(contentBounds.width * 0.82,
-                                640.0,
-                                maximumContentHeight * (16.0 / 9.0)), 0.0)
+        let itemWidth = max(min(contentBounds.width * 0.82, 640.0, maximumContentHeight * (16.0 / 9.0)), 0.0)
         let itemHeight = itemWidth * (9.0 / 16.0)
 
         collectionView.frame = CGRect(x: contentBounds.minX,
