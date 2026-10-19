@@ -48,7 +48,16 @@ extension UIView {
     }
 
     /// Apply a gaussian blur to this view with an animation
-    public func setBlurRadiusAnimated(radius: CGFloat, duration: TimeInterval = 0.45) {
+    /// - Parameters:
+    ///   - radius: The blur radius to animate to.
+    ///   - duration: How long the animation runs. Defaults to 0.45 seconds.
+    ///   - timing: How the radius is paced over the duration. Defaults to `.automatic`, which
+    ///     eases out when clearing a blur and eases in when applying one, so the visible change
+    ///     is spread evenly either way. Choose `.linear` for a constant rate, or `.custom` to
+    ///     supply any timing function.
+    public func setBlurRadiusAnimated(radius: CGFloat,
+                                      duration: TimeInterval = 0.45,
+                                      timing: BlurAnimationTiming = .automatic) {
         let currentRadius = self.blurRadius
         self.blurRadius = radius
 
@@ -56,7 +65,83 @@ extension UIView {
         blurAnimation.fromValue = currentRadius
         blurAnimation.toValue = radius
         blurAnimation.duration = duration
+        blurAnimation.timingFunction = timing.timingFunction(from: currentRadius, to: radius)
         self.layer.add(blurAnimation, forKey: "filters.gaussianBlur.inputRadius")
+    }
+}
+
+// MARK: - Animation Timing
+
+/// How an animated change of blur radius is paced over its duration.
+///
+/// Perceived sharpness is not linear in a gaussian blur's radius: a view looks almost equally
+/// blurred at a radius of 24 or 12, and only the last few points bring its detail back. Pacing
+/// the radius at a constant rate therefore looks uneven: holding and then snapping sharp when
+/// clearing, or snapping blurred and then idling when applying. The blur curves bend the radius
+/// so the visible change is spread evenly, in whichever direction it runs.
+public enum BlurAnimationTiming {
+
+    /// `.easeOut` when the radius is decreasing and `.easeIn` when it is increasing. The default.
+    case automatic
+
+    /// A constant rate of radius change.
+    case linear
+
+    /// `CAMediaTimingFunction.blurEaseOut`, which suits clearing a blur.
+    case easeOut
+
+    /// `CAMediaTimingFunction.blurEaseIn`, which suits applying a blur.
+    case easeIn
+
+    /// Any Core Animation timing function.
+    case custom(CAMediaTimingFunction)
+
+    /// The timing function to apply to a change between two radii.
+    /// - Parameters:
+    ///   - currentRadius: The radius the animation starts from.
+    ///   - radius: The radius it ends at.
+    /// - Returns: The curve for this timing, resolved by direction for `.automatic`.
+    func timingFunction(from currentRadius: CGFloat, to radius: CGFloat) -> CAMediaTimingFunction {
+        switch self {
+        case .automatic:
+            return radius < currentRadius ? .blurEaseOut : .blurEaseIn
+        case .linear:
+            return CAMediaTimingFunction(name: .linear)
+        case .easeOut:
+            return .blurEaseOut
+        case .easeIn:
+            return .blurEaseIn
+        case .custom(let timingFunction):
+            return timingFunction
+        }
+    }
+}
+
+// MARK: - Timing Curves
+
+extension CAMediaTimingFunction {
+
+    /// A cubic Bézier ease-out for clearing a blur, steeper than the system `.easeOut`.
+    ///
+    /// Its control points are (0.2, 0.9) and (0.4, 1): the curve covers most of its distance in
+    /// the first fifth of the duration, then decelerates for the rest. The system `.easeOut`,
+    /// with control points (0, 0) and (0.58, 1), is far gentler and leaves too much radius late.
+    ///
+    /// The steepness is deliberate. Clearing a blur means passing quickly through the large
+    /// radii, where nothing visible changes, and slowly through the last few points, where the
+    /// detail returns. See `BlurAnimationTiming` for why a constant rate looks uneven.
+    public static var blurEaseOut: CAMediaTimingFunction {
+        CAMediaTimingFunction(controlPoints: 0.2, 0.9, 0.4, 1)
+    }
+
+    /// A cubic Bézier ease-in for applying a blur: `blurEaseOut` reflected through its centre.
+    ///
+    /// Its control points are (0.6, 0) and (0.8, 0.1). Applying a blur runs the radius the other
+    /// way, so the curve must linger through the first few points, where every point of radius
+    /// shows, and then race through the large radii, where nothing visible changes. Using the
+    /// ease-out in this direction would look like an instant blur followed by nothing.
+    public static var blurEaseIn: CAMediaTimingFunction {
+        CAMediaTimingFunction(controlPoints: 0.6, 0, 0.8, 0.1)
     }
 }
 

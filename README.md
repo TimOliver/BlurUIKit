@@ -68,6 +68,8 @@ the blur backdrop; the view and its ancestors must allow overflow to display it.
 ### UIView Blur Extension
 
 Another feature of `BlurUIKit` is being able to apply gaussian blur to `UIView` instances.
+This is different to `UIVisualEffectView` in that only the view itself is blurred, leaving
+any content visible underneath the view unchanged.
 
 ```swift
 
@@ -77,6 +79,9 @@ redSquare.backgroundColor = .systemRed
 
 // Apply gaussian blur to it
 redSquare.blurRadius = 30.0
+
+// Animate it away
+redSquare.setBlurRadiusAnimated(radius: 0, duration: 0.6)
 
 ```
 
