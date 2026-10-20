@@ -16,12 +16,12 @@ final class ReflectionRenderingTests: XCTestCase {
                      CGSize(width: 260, height: 500)] {
             host.reflection.frame.size = size
             let snapshot = try await capture(host, name: "quadrants-\(size)")
-            assertQuadrants(snapshot, in: host.reflection)
+            try assertQuadrants(snapshot, in: host.reflection)
         }
 
         host.reflection.bounds.origin = CGPoint(x: 37, y: 29)
         let snapshot = try await capture(host, name: "quadrants-shifted-bounds")
-        assertQuadrants(snapshot, in: host.reflection)
+        try assertQuadrants(snapshot, in: host.reflection)
     }
 
     @MainActor
@@ -36,12 +36,12 @@ final class ReflectionRenderingTests: XCTestCase {
         // Four-point stripes: x=98 is black and x=102 is white. Check both an interior
         // row and one just above the seam so backdrop overflow cannot blur the source.
         for y: CGFloat in [80, 196] {
-            let dark = snapshot.pixel(in: host.reflection, x: 98, y: y).red
-            let light = snapshot.pixel(in: host.reflection, x: 102, y: y).red
+            let dark = try snapshot.pixel(in: host.reflection, x: 98, y: y).red
+            let light = try snapshot.pixel(in: host.reflection, x: 102, y: y).red
             XCTAssertGreaterThan(light - dark, 0.8, "Source detail must remain sharp")
         }
-        let reflectedDark = snapshot.pixel(in: host.reflection, x: 98, y: 320).red
-        let reflectedLight = snapshot.pixel(in: host.reflection, x: 102, y: 320).red
+        let reflectedDark = try snapshot.pixel(in: host.reflection, x: 98, y: 320).red
+        let reflectedLight = try snapshot.pixel(in: host.reflection, x: 102, y: 320).red
         XCTAssertLessThan(abs(reflectedLight - reflectedDark), 0.2,
                           "The reflected stripes must actually be blurred")
         let meanIntensity = (reflectedDark + reflectedLight) / 2
@@ -56,15 +56,15 @@ final class ReflectionRenderingTests: XCTestCase {
         host.reflection.contentView.backgroundColor = .white
         host.reflection.reflectionAlpha = 0.5
         var snapshot = try await capture(host, name: "half-opacity-reflection")
-        assertColor(.white, snapshot.pixel(in: host.reflection, x: 140, y: 100))
-        let reflectedIntensity = snapshot.pixel(in: host.reflection, x: 140, y: 300).red
+        assertColor(.white, try snapshot.pixel(in: host.reflection, x: 140, y: 100))
+        let reflectedIntensity = try snapshot.pixel(in: host.reflection, x: 140, y: 300).red
         XCTAssertGreaterThan(reflectedIntensity, 0.3)
         XCTAssertLessThan(reflectedIntensity, 0.8)
 
         host.reflection.reflectionAlpha = 0
         snapshot = try await capture(host, name: "zero-opacity-reflection")
-        assertColor(.white, snapshot.pixel(in: host.reflection, x: 140, y: 100))
-        assertColor(.black, snapshot.pixel(in: host.reflection, x: 140, y: 300))
+        assertColor(.white, try snapshot.pixel(in: host.reflection, x: 140, y: 100))
+        assertColor(.black, try snapshot.pixel(in: host.reflection, x: 140, y: 300))
     }
 
     @MainActor
@@ -82,28 +82,28 @@ final class ReflectionRenderingTests: XCTestCase {
         }
         host.reflection.contentView = scrollView
         var snapshot = try await capture(host, name: "lifecycle-initial-red")
-        assertSolid(.red, snapshot: snapshot, reflection: host.reflection)
+        try assertSolid(.red, snapshot: snapshot, reflection: host.reflection)
 
         scrollView.contentOffset.x = 280
         host.reflection.setNeedsReflectionUpdate()
         snapshot = try await capture(host, name: "lifecycle-scrolled-blue")
-        assertSolid(.blue, snapshot: snapshot, reflection: host.reflection)
+        try assertSolid(.blue, snapshot: snapshot, reflection: host.reflection)
 
         let replacement = UIView()
         replacement.backgroundColor = .red
         host.reflection.contentView = replacement
         snapshot = try await capture(host, name: "lifecycle-replaced-red")
-        assertSolid(.red, snapshot: snapshot, reflection: host.reflection)
+        try assertSolid(.red, snapshot: snapshot, reflection: host.reflection)
 
         host.reflection.isReflectionHidden = true
         snapshot = try await capture(host, name: "lifecycle-hidden-reflection")
-        assertColor(.red, snapshot.pixel(in: host.reflection, x: 140, y: 100))
-        assertColor(.black, snapshot.pixel(in: host.reflection, x: 140, y: 300))
+        assertColor(.red, try snapshot.pixel(in: host.reflection, x: 140, y: 100))
+        assertColor(.black, try snapshot.pixel(in: host.reflection, x: 140, y: 300))
 
         replacement.backgroundColor = .blue
         host.reflection.isReflectionHidden = false
         snapshot = try await capture(host, name: "lifecycle-reshown-blue")
-        assertSolid(.blue, snapshot: snapshot, reflection: host.reflection)
+        try assertSolid(.blue, snapshot: snapshot, reflection: host.reflection)
     }
 
     @MainActor
@@ -119,11 +119,11 @@ final class ReflectionRenderingTests: XCTestCase {
         host.reflection.contentView.addSubview(patch)
 
         let snapshot = try await capture(host, name: "dimming-behind-source")
-        assertColor(.white, snapshot.pixel(in: host.reflection, x: 140, y: 170))
-        let extendedDimming = snapshot.pixel(in: host.reflection, x: 40, y: 190)
+        assertColor(.white, try snapshot.pixel(in: host.reflection, x: 140, y: 170))
+        let extendedDimming = try snapshot.pixel(in: host.reflection, x: 40, y: 190)
         XCTAssertGreaterThan(extendedDimming.red, 0.8)
         XCTAssertLessThan(extendedDimming.green, 0.1)
-        assertColor(.black, snapshot.pixel(in: host.reflection, x: 40, y: 80))
+        assertColor(.black, try snapshot.pixel(in: host.reflection, x: 40, y: 80))
     }
 
     @MainActor
@@ -159,8 +159,8 @@ final class ReflectionRenderingTests: XCTestCase {
         blur.dimmingTintColor = nil
         rootView.addSubview(blur)
         let fallbackSnapshot = try await capture(host, name: "native-material-and-unavailable-filter")
-        let nativeDark = fallbackSnapshot.pixel(in: nativeFixture, x: 98, y: 80).red
-        let nativeLight = fallbackSnapshot.pixel(in: nativeFixture, x: 102, y: 80).red
+        let nativeDark = try fallbackSnapshot.pixel(in: nativeFixture, x: 98, y: 80).red
+        let nativeLight = try fallbackSnapshot.pixel(in: nativeFixture, x: 102, y: 80).red
         XCTAssertLessThan(abs(nativeLight - nativeDark), 0.2)
         XCTAssertGreaterThan((nativeDark + nativeLight) / 2, 0.25)
 
@@ -168,8 +168,8 @@ final class ReflectionRenderingTests: XCTestCase {
         // Blur alone would miss a fallback that accidentally hides UIKit's material tint.
         for y: CGFloat in [80, 120] {
             for x: CGFloat in [98, 102] {
-                let expected = fallbackSnapshot.pixel(in: nativeFixture, x: x, y: y)
-                let actual = fallbackSnapshot.pixel(in: fixture, x: x, y: y)
+                let expected = try fallbackSnapshot.pixel(in: nativeFixture, x: x, y: y)
+                let actual = try fallbackSnapshot.pixel(in: fixture, x: x, y: y)
                 XCTAssertEqual(actual.red, expected.red, accuracy: 0.03)
                 XCTAssertEqual(actual.green, expected.green, accuracy: 0.03)
                 XCTAssertEqual(actual.blue, expected.blue, accuracy: 0.03)
@@ -180,8 +180,8 @@ final class ReflectionRenderingTests: XCTestCase {
         blur.setNeedsLayout()
         let recoveredSnapshot = try await capture(host, name: "filter-recovery-zero-radius")
         for y: CGFloat in [80, 120] {
-            let dark = recoveredSnapshot.pixel(in: fixture, x: 98, y: y)
-            let light = recoveredSnapshot.pixel(in: fixture, x: 102, y: y)
+            let dark = try recoveredSnapshot.pixel(in: fixture, x: 98, y: y)
+            let light = try recoveredSnapshot.pixel(in: fixture, x: 102, y: y)
             assertColor(.black, dark)
             assertColor(.white, light)
             XCTAssertGreaterThan(light.red - dark.red, 0.8,
@@ -283,13 +283,14 @@ final class ReflectionRenderingTests: XCTestCase {
 
     @MainActor
     private func assertQuadrants(_ snapshot: Snapshot, in reflection: ReflectionBlurView,
-                                 file: StaticString = #filePath, line: UInt = #line) {
+                                 file: StaticString = #filePath, line: UInt = #line) throws {
         for (row, colors) in [[Pixel.red, .green], [.blue, .yellow],
                               [.blue, .yellow], [.red, .green]].enumerated() {
             for (column, color) in colors.enumerated() {
-                assertColor(color, snapshot.pixel(in: reflection,
+                assertColor(color, try snapshot.pixel(in: reflection,
                     x: reflection.bounds.width * (column == 0 ? 0.25 : 0.75),
-                    y: reflection.bounds.height * (CGFloat(row) + 0.5) / 4),
+                    y: reflection.bounds.height * (CGFloat(row) + 0.5) / 4,
+                    file: file, line: line),
                     file: file, line: line)
             }
         }
@@ -297,9 +298,11 @@ final class ReflectionRenderingTests: XCTestCase {
 
     @MainActor
     private func assertSolid(_ color: Pixel, snapshot: Snapshot, reflection: ReflectionBlurView,
-                             file: StaticString = #filePath, line: UInt = #line) {
-        assertColor(color, snapshot.pixel(in: reflection, x: 140, y: 100), file: file, line: line)
-        assertColor(color, snapshot.pixel(in: reflection, x: 140, y: 300), file: file, line: line)
+                             file: StaticString = #filePath, line: UInt = #line) throws {
+        assertColor(color, try snapshot.pixel(in: reflection, x: 140, y: 100, file: file, line: line),
+                    file: file, line: line)
+        assertColor(color, try snapshot.pixel(in: reflection, x: 140, y: 300, file: file, line: line),
+                    file: file, line: line)
     }
 
     private func assertColor(_ expected: Pixel, _ actual: Pixel,
@@ -319,6 +322,17 @@ final class ReflectionRenderingTests: XCTestCase {
         static let yellow = Pixel(red: 1, green: 1, blue: 0)
         static let white = Pixel(red: 1, green: 1, blue: 1)
         static let black = Pixel(red: 0, green: 0, blue: 0)
+    }
+
+    private struct SampleOutsideCapture: Error, CustomStringConvertible {
+        let point: CGPoint
+        let width: Int
+        let height: Int
+
+        var description: String {
+            "Sample point \(point) lies outside the \(width)×\(height) point capture of the test window. "
+                + "Is the simulator in landscape?"
+        }
     }
 
     @MainActor
@@ -344,10 +358,21 @@ final class ReflectionRenderingTests: XCTestCase {
             self.bytes = bytes
         }
 
-        func pixel(in view: UIView, x: CGFloat, y: CGFloat) -> Pixel {
+        /// Reads the pixel under a point in `view`'s bounds. A point outside the capture is a
+        /// setup problem, such as a simulator left in landscape, so it fails the test and stops
+        /// it, instead of clamping to the nearest edge and reporting a misleading colour mismatch.
+        func pixel(in view: UIView, x: CGFloat, y: CGFloat,
+                   file: StaticString = #filePath, line: UInt = #line) throws -> Pixel {
             let point = view.convert(CGPoint(x: view.bounds.minX + x, y: view.bounds.minY + y), to: window)
-            let column = min(max(Int(point.x), 0), width - 1)
-            let row = min(max(Int(point.y), 0), height - 1)
+            let column = Int(point.x)
+            let row = Int(point.y)
+            guard point.x >= 0, point.y >= 0, column < width, row < height else {
+                // Recorded before throwing: as of Xcode 26.3, XCTest reports an error thrown from
+                // these hosted async tests without its description.
+                let problem = SampleOutsideCapture(point: point, width: width, height: height)
+                XCTFail(problem.description, file: file, line: line)
+                throw problem
+            }
             let offset = (row * width + column) * 4
             return Pixel(red: Double(bytes[offset]) / 255, green: Double(bytes[offset + 1]) / 255,
                          blue: Double(bytes[offset + 2]) / 255)
