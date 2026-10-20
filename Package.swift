@@ -1,9 +1,9 @@
-// swift-tools-version:5.3
+// swift-tools-version:6.0
 import PackageDescription
 
 let package = Package(
     name: "BlurUIKit",
-    platforms: [.iOS("15.0")],
+    platforms: [.iOS(.v15)],
     products: [
         .library(
             name: "BlurUIKit",
@@ -30,5 +30,6 @@ let package = Package(
             dependencies: ["BlurUIKit", "BlurSwiftUI"],
             path: "Tests/BlurUIKitTests"
         ),
-    ]
+    ],
+    swiftLanguageModes: [.v6]
 )

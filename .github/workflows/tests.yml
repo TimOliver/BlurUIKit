@@ -1,0 +1,48 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Build and Test
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Use an iPhone on the newest installed iOS runtime. Runtime keys end in a version
+      # such as "iOS-27-2", which is turned into numbers so it sorts correctly.
+      - name: Pick an iPhone simulator
+        run: |
+          UDID=$(xcrun simctl list devices available -j | jq -r '
+            [.devices | to_entries[]
+              | select(.key | contains("SimRuntime.iOS-"))
+              | (.key | capture("iOS-(?<v>[0-9-]+)$").v | split("-") | map(tonumber)) as $version
+              | .value[] | select(.name | startswith("iPhone"))
+              | {udid, $version}]
+            | sort_by(.version) | last | .udid')
+          echo "Using simulator $UDID"
+          echo "SIMULATOR_UDID=$UDID" >> "$GITHUB_ENV"
+
+      - name: Build example app
+        run: |
+          xcodebuild build \
+            -project BlurUIKit.xcodeproj \
+            -scheme BlurUIKitExample \
+            -destination "id=$SIMULATOR_UDID" \
+            CODE_SIGNING_ALLOWED=NO
+
+      # xcodebuild prefers the Xcode project over Package.swift when both are present,
+      # so remove it from this checkout to test the package (and its test target) directly.
+      - name: Run package tests
+        run: |
+          rm -rf BlurUIKit.xcodeproj
+          xcodebuild test \
+            -scheme BlurUIKit-Package \
+            -destination "id=$SIMULATOR_UDID"

@@ -4,17 +4,20 @@ import UIKit
 
 final class ReduceTransparencyTests: XCTestCase {
 
+    /// Replaces the system Reduce Transparency setting for the rest of the current test.
     @MainActor
-    override func tearDown() {
-        VariableBlurView.isReduceTransparencyEnabled = { UIAccessibility.isReduceTransparencyEnabled }
-        super.tearDown()
+    private func stubReduceTransparency(_ isEnabled: @escaping () -> Bool) {
+        VariableBlurView.isReduceTransparencyEnabled = isEnabled
+        addTeardownBlock { @MainActor in
+            VariableBlurView.isReduceTransparencyEnabled = { UIAccessibility.isReduceTransparencyEnabled }
+        }
     }
 
     // MARK: - Fallback
 
     @MainActor
     func testBlurIsShownWhenReduceTransparencyIsOff() throws {
-        VariableBlurView.isReduceTransparencyEnabled = { false }
+        stubReduceTransparency { false }
 
         try withBlur { blur in
             XCTAssertFalse(try effectView(in: blur).isHidden)
@@ -24,7 +27,7 @@ final class ReduceTransparencyTests: XCTestCase {
 
     @MainActor
     func testBlurIsReplacedByFullDimmingWhenReduceTransparencyIsOn() throws {
-        VariableBlurView.isReduceTransparencyEnabled = { true }
+        stubReduceTransparency { true }
 
         try withBlur { blur in
             XCTAssertTrue(try effectView(in: blur).isHidden)
@@ -34,7 +37,7 @@ final class ReduceTransparencyTests: XCTestCase {
 
     @MainActor
     func testDisabledDimmingStaysHiddenWhenReduceTransparencyIsOn() throws {
-        VariableBlurView.isReduceTransparencyEnabled = { true }
+        stubReduceTransparency { true }
 
         try withBlur { blur in
             blur.dimmingAlpha = nil
@@ -45,7 +48,7 @@ final class ReduceTransparencyTests: XCTestCase {
 
     @MainActor
     func testReflectionKeepsItsBlurWhenReduceTransparencyIsOn() throws {
-        VariableBlurView.isReduceTransparencyEnabled = { true }
+        stubReduceTransparency { true }
 
         let reflection = ReflectionBlurView(frame: CGRect(x: 0, y: 0, width: 300, height: 400))
         reflection.layoutIfNeeded()
@@ -60,7 +63,7 @@ final class ReduceTransparencyTests: XCTestCase {
     @MainActor
     func testStatusChangeNotificationSwapsBetweenBlurAndFallback() throws {
         var isEnabled = false
-        VariableBlurView.isReduceTransparencyEnabled = { isEnabled }
+        stubReduceTransparency { isEnabled }
 
         try withBlur { blur in
             XCTAssertFalse(try effectView(in: blur).isHidden)

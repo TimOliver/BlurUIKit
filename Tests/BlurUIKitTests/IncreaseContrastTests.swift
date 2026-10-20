@@ -61,11 +61,15 @@ final class IncreaseContrastTests: XCTestCase {
         try withBlur(style: .light, contrast: .normal) { blur in
             XCTAssertEqual(try dimmingView(in: blur).alpha, 0.5, accuracy: 0.001)
 
+            // Older iOS versions only apply trait overrides in the next update cycle,
+            // so flush them before laying out.
             blur.traitOverrides.accessibilityContrast = .high
+            blur.updateTraitsIfNeeded()
             blur.layoutIfNeeded()
             XCTAssertEqual(try dimmingView(in: blur).alpha, 0.75, accuracy: 0.001)
 
             blur.traitOverrides.accessibilityContrast = .normal
+            blur.updateTraitsIfNeeded()
             blur.layoutIfNeeded()
             XCTAssertEqual(try dimmingView(in: blur).alpha, 0.5, accuracy: 0.001)
         }
