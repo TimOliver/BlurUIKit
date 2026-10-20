@@ -24,7 +24,6 @@ import ObjectiveC
 import UIKit
 
 // Applies a gaussian blur to a UIView without blurring the content below it.
-@available(iOS 14, *)
 extension UIView {
 
     /// Set the gaussian blur radius of this view
@@ -35,15 +34,12 @@ extension UIView {
         }
 
         set {
-            // We can't update the radius of an existing object,
-            // so remove the old one and create a fresh replacement.
-            if let filter = self.blurFilter {
-                self.layer.filters?.removeAll { ($0 as? NSObject) == filter }
+            // A filter with no radius still forces offscreen rendering, so remove it entirely.
+            guard newValue > 0.0 else {
+                removeBlurFilter()
+                return
             }
-            guard let newFilter = BlurFilterProvider.blurFilter(named: "gaussianBlur") else { return }
-            newFilter.setValue(newValue, forKey: "inputRadius")
-            self.layer.filters = (self.layer.filters ?? []) + [newFilter]
-            self.blurFilter = newFilter
+            installBlurFilter(radius: newValue)
         }
     }
 
@@ -59,14 +55,26 @@ extension UIView {
                                       duration: TimeInterval = 0.45,
                                       timing: BlurAnimationTiming = .automatic) {
         let currentRadius = self.blurRadius
-        self.blurRadius = radius
+
+        // Keep a filter in place even when clearing the blur, so there is something to animate.
+        installBlurFilter(radius: radius)
+        let filter = self.blurFilter
 
         let blurAnimation = CABasicAnimation(keyPath: "filters.gaussianBlur.inputRadius")
         blurAnimation.fromValue = currentRadius
         blurAnimation.toValue = radius
         blurAnimation.duration = duration
         blurAnimation.timingFunction = timing.timingFunction(from: currentRadius, to: radius)
+
+        CATransaction.begin()
+        CATransaction.setCompletionBlock { [weak self] in
+            // Once the blur has fully cleared, remove the now-idle filter, unless
+            // another blur change has replaced it in the meantime.
+            guard let self, radius <= 0.0, self.blurFilter === filter else { return }
+            self.removeBlurFilter()
+        }
         self.layer.add(blurAnimation, forKey: "filters.gaussianBlur.inputRadius")
+        CATransaction.commit()
     }
 }
 
@@ -159,5 +167,25 @@ extension UIView {
         set {
             objc_setAssociatedObject(self, &BlurFilterObjectHandle, newValue, objc_AssociationPolicy.OBJC_ASSOCIATION_RETAIN_NONATOMIC)
         }
+    }
+
+    // We can't update the radius of an existing filter,
+    // so remove the old one and create a fresh replacement.
+    private func installBlurFilter(radius: CGFloat) {
+        removeBlurFilter()
+        guard let newFilter = BlurFilterProvider.blurFilter(named: "gaussianBlur") else { return }
+        newFilter.setValue(radius, forKey: "inputRadius")
+        self.layer.filters = (self.layer.filters ?? []) + [newFilter]
+        self.blurFilter = newFilter
+    }
+
+    // Remove the blur filter from this view's layer, leaving any other filters untouched
+    private func removeBlurFilter() {
+        guard let filter = self.blurFilter else { return }
+        self.layer.filters?.removeAll { ($0 as? NSObject) == filter }
+        if self.layer.filters?.isEmpty == true {
+            self.layer.filters = nil
+        }
+        self.blurFilter = nil
     }
 }
