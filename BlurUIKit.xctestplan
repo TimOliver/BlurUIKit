@@ -1,0 +1,37 @@
+{
+  "configurations" : [
+    {
+      "id" : "5B252AF3-79CD-4B1B-A621-01A6D93C3E54",
+      "name" : "Default",
+      "options" : {
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "codeCoverage" : true,
+    "codeCoverageTargets" : [
+      {
+        "containerPath" : "container:BlurUIKit.xcodeproj",
+        "identifier" : "229642C12C1E8768003C04C5",
+        "name" : "BlurUIKitExample"
+      }
+    ],
+    "onlyGenerateCoverageForSpecifiedTargets" : true,
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:BlurUIKit.xcodeproj",
+      "identifier" : "229642C12C1E8768003C04C5",
+      "name" : "BlurUIKitExample"
+    }
+  },
+  "testTargets" : [
+    {
+      "parallelizable" : false,
+      "target" : {
+        "containerPath" : "container:BlurUIKit.xcodeproj",
+        "identifier" : "9ABBE8BA7EC0C88D32CB4319",
+        "name" : "BlurUIKitTests"
+      }
+    }
+  ],
+  "version" : 1
+}

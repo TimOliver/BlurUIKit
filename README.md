@@ -130,6 +130,19 @@ Then add the target dependency you need:
 ```
 </details>
 
+# Running the Tests
+
+Open `BlurUIKit.xcodeproj`, select the **BlurUIKitExample** scheme and an iOS simulator,
+then press **⌘U**. The shared **BlurUIKit** test plan runs the unit and rendering tests
+together with code coverage enabled. Open the latest test run in Xcode's Report
+navigator (**⌘9**) and select **Coverage** to inspect coverage under `BlurUIKitExample`.
+The example app compiles the library sources directly, so both suites contribute to
+the same coverage entries.
+
+The unit test files are shared with the Swift package's `BlurUIKitTests` target.
+CI also runs them against the separate `BlurUIKit` and `BlurSwiftUI` package modules
+to verify package integration. Rendering tests require the example app as their host.
+
 # Is this really App Store safe?
 
 _tl;dr Yes, it should be 99.9% safe for the App Store. If your app gets rejected from this library, [please open an issue](https://github.com/TimOliver/BlurUIKit/issues/new)._

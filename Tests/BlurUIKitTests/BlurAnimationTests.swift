@@ -1,6 +1,10 @@
 import XCTest
 import UIKit
+#if SWIFT_PACKAGE
 @testable import BlurUIKit
+#else
+@testable import BlurUIKitExample
+#endif
 
 final class BlurAnimationTests: XCTestCase {
 
@@ -150,10 +154,10 @@ final class BlurAnimationTests: XCTestCase {
 
     @MainActor
     func testAnimatingToZeroKeepsTheFilterUntilTheAnimationEnds() {
-        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 100, height: 100))
+        let window = makePinnedWindow(frame: CGRect(x: 0, y: 0, width: 100, height: 100))
+        defer { window.isHidden = true }
         let view = UIView(frame: window.bounds)
         window.addSubview(view)
-        window.isHidden = false
         view.blurRadius = 20
 
         view.setBlurRadiusAnimated(radius: 0, duration: 0.05)
@@ -166,10 +170,10 @@ final class BlurAnimationTests: XCTestCase {
 
     @MainActor
     func testAnimatingAwayFromZeroKeepsTheFilter() {
-        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 100, height: 100))
+        let window = makePinnedWindow(frame: CGRect(x: 0, y: 0, width: 100, height: 100))
+        defer { window.isHidden = true }
         let view = UIView(frame: window.bounds)
         window.addSubview(view)
-        window.isHidden = false
 
         view.setBlurRadiusAnimated(radius: 20, duration: 0.05)
         RunLoop.main.run(until: Date().addingTimeInterval(0.3))

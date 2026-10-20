@@ -1,6 +1,10 @@
 import XCTest
 import UIKit
+#if SWIFT_PACKAGE
 @testable import BlurUIKit
+#else
+@testable import BlurUIKitExample
+#endif
 
 final class BlurFilterReuseTests: XCTestCase {
 
@@ -71,6 +75,7 @@ final class BlurFilterReuseTests: XCTestCase {
         try withBlur { blur, _ in
             let installed = try filter(in: blur)
             let otherWindow = makePinnedWindow()
+            defer { otherWindow.isHidden = true }
             otherWindow.addSubview(blur)
             blur.layoutIfNeeded()
             XCTAssertFalse(try filter(in: blur) === installed)
@@ -83,6 +88,7 @@ final class BlurFilterReuseTests: XCTestCase {
     @MainActor
     private func withBlur(_ body: (VariableBlurView, UIWindow) throws -> Void) throws {
         let window = makePinnedWindow()
+        defer { window.isHidden = true }
         let blur = VariableBlurView(frame: CGRect(x: 0, y: 0, width: 300, height: 100))
         window.addSubview(blur)
         blur.layoutIfNeeded()

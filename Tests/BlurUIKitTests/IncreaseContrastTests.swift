@@ -1,6 +1,10 @@
 import XCTest
 import UIKit
+#if SWIFT_PACKAGE
 @testable import BlurUIKit
+#else
+@testable import BlurUIKitExample
+#endif
 
 final class IncreaseContrastTests: XCTestCase {
 
@@ -89,6 +93,7 @@ final class IncreaseContrastTests: XCTestCase {
         defer { VariableBlurView.isReduceTransparencyEnabled = { UIAccessibility.isReduceTransparencyEnabled } }
 
         let window = makePinnedWindow(style: style, contrast: contrast)
+        defer { window.isHidden = true }
         let blur = VariableBlurView(frame: CGRect(x: 0, y: 0, width: 300, height: 100))
         window.addSubview(blur)
         blur.layoutIfNeeded()

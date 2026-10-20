@@ -1,6 +1,10 @@
 import XCTest
 import UIKit
+#if SWIFT_PACKAGE
 @testable import BlurUIKit
+#else
+@testable import BlurUIKitExample
+#endif
 
 final class VariableBlurLayoutTests: XCTestCase {
     @MainActor

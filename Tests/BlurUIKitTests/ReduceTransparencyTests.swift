@@ -1,8 +1,12 @@
 import XCTest
 import UIKit
 import SwiftUI
+#if SWIFT_PACKAGE
 import BlurSwiftUI
 @testable import BlurUIKit
+#else
+@testable import BlurUIKitExample
+#endif
 
 final class ReduceTransparencyTests: XCTestCase {
 
@@ -130,6 +134,7 @@ final class ReduceTransparencyTests: XCTestCase {
     @MainActor
     private func withBlur(_ body: (VariableBlurView) throws -> Void) rethrows {
         let window = makePinnedWindow()
+        defer { window.isHidden = true }
         let blur = VariableBlurView(frame: CGRect(x: 0, y: 0, width: 300, height: 100))
         blur.dimmingAlpha = .constant(alpha: 0.5)
         window.addSubview(blur)

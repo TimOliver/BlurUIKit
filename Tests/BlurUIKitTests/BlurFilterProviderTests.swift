@@ -1,5 +1,9 @@
 import XCTest
+#if SWIFT_PACKAGE
 @testable import BlurUIKit
+#else
+@testable import BlurUIKitExample
+#endif
 
 final class BlurFilterProviderTests: XCTestCase {
     @MainActor

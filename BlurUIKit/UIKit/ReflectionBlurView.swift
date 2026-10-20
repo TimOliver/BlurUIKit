@@ -231,10 +231,10 @@ public class ReflectionBlurView: UIView {
 
     // MARK: - Appearance
 
+    // Update the alpha/visibility of the reflected copy
     private func updateReflectionAppearance() {
         let alpha = min(max(reflectionAlpha, 0.0), 1.0)
 
-        // Update the alpha/visibility of the reflected copy
         CATransaction.begin()
         CATransaction.setDisableActions(true)
         replicatorView.replicatorLayer.instanceCount = isReflectionHidden ? 1 : 2

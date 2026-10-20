@@ -30,27 +30,28 @@ jobs:
           echo "Using simulator $UDID"
           echo "SIMULATOR_UDID=$UDID" >> "$GITHUB_ENV"
 
-      - name: Test reflection rendering in example app
+      - name: Run the full Xcode test suite
         run: |
           xcodebuild test \
             -project BlurUIKit.xcodeproj \
             -scheme BlurUIKitExample \
+            -testPlan BlurUIKit \
             -destination "id=$SIMULATOR_UDID" \
-            -resultBundlePath ReflectionRenderingTests.xcresult \
+            -resultBundlePath BlurUIKitTests.xcresult \
             -parallel-testing-enabled NO \
             CODE_SIGNING_ALLOWED=NO
 
-      - name: Upload rendering failure diagnostics
+      - name: Upload test results and coverage
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: reflection-rendering-results
-          path: ReflectionRenderingTests.xcresult
+          name: blur-uikit-test-results
+          path: BlurUIKitTests.xcresult
           if-no-files-found: ignore
 
       # xcodebuild prefers the Xcode project over Package.swift when both are present,
-      # so remove it from this checkout to test the package (and its test target) directly.
-      - name: Run package tests
+      # so remove it from this checkout to also verify the separate package modules.
+      - name: Verify the Swift package tests
         run: |
           rm -rf BlurUIKit.xcodeproj
           xcodebuild test \

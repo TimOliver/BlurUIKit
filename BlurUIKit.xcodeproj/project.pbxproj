@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		01287A5D6D7EE2F9BEDD5D6C /* IncreaseContrastTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C0671D02FFF69D264E6C8B1 /* IncreaseContrastTests.swift */; };
+		026E2B0F4F685C3B870E1404 /* TraitPinning.swift in Sources */ = {isa = PBXBuildFile; fileRef = 470764F83ACEB3689A57EC6F /* TraitPinning.swift */; };
 		2278AEB23070B93300748C72 /* ReflectionBlurView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2278AEB13070B93300748C72 /* ReflectionBlurView.swift */; };
 		2278AEB43070BCDC00748C72 /* BlurReplicatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2278AEB33070BCDC00748C72 /* BlurReplicatorView.swift */; };
 		2278AEB63070BEF600748C72 /* ReflectionBlurViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2278AEB53070BEF600748C72 /* ReflectionBlurViewController.swift */; };
@@ -24,7 +26,16 @@
 		22GRAD012E3D000000000001 /* BlurGradientImageRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22GRAD002E3D000000000000 /* BlurGradientImageRenderer.swift */; };
 		22SWUI002E4B000000000001 /* VariableBlur.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22SWUI012E4B000000000002 /* VariableBlur.swift */; };
 		22SWUI022E4B000000000003 /* SwiftUIExampleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22SWUI032E4B000000000004 /* SwiftUIExampleView.swift */; };
+		3A2CE1A705E4C37F0670647C /* VariableBlurGradientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13005B0856582148927C533B /* VariableBlurGradientTests.swift */; };
+		4AD080B5CD735C675200B2BF /* ReduceTransparencyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B4E26B921F1C110BA4A520 /* ReduceTransparencyTests.swift */; };
+		506684A18703FE68B77DBF2B /* BlurAnimationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E36FDE87C92059EB074AF9D /* BlurAnimationTests.swift */; };
+		590C6DAA7BC0BFE8C38A602F /* BlurFilterProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CF1BDB96B8BC029F9169A98 /* BlurFilterProviderTests.swift */; };
+		85A684F716EA1B2ACAC1942C /* VariableBlurFilterFailureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B5FB0DF0B2103806746779B /* VariableBlurFilterFailureTests.swift */; };
+		A53F020B28859912EBE98A6E /* BlurFilterReuseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F8C693D70B2A124223AB57E /* BlurFilterReuseTests.swift */; };
 		AAEFC312426D417B1B99A904 /* ReflectionRenderingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6825ED84067EA37689977422 /* ReflectionRenderingTests.swift */; };
+		C5258C11FC0ED5A6602229B5 /* VariableBlurLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60974F7941149417D0C92323 /* VariableBlurLayoutTests.swift */; };
+		CA738D061170886D27B5256E /* BlurFilterFailureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 375378F1442DDF7058401C0B /* BlurFilterFailureTests.swift */; };
+		E44464420B31DEE387D6C433 /* ReflectionBlurViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AF59D77D3945E20010F2E80 /* ReflectionBlurViewTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -38,6 +49,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		13005B0856582148927C533B /* VariableBlurGradientTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VariableBlurGradientTests.swift; sourceTree = "<group>"; };
+		1AF59D77D3945E20010F2E80 /* ReflectionBlurViewTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ReflectionBlurViewTests.swift; sourceTree = "<group>"; };
 		226E9CBC2D25388F007EFE4D /* BlurUIKit.podspec */ = {isa = PBXFileReference; lastKnownFileType = text; path = BlurUIKit.podspec; sourceTree = "<group>"; };
 		226E9CBE2D253B16007EFE4D /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
 		2278AEB13070B93300748C72 /* ReflectionBlurView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReflectionBlurView.swift; sourceTree = "<group>"; };
@@ -61,8 +74,18 @@
 		22GRAD002E3D000000000000 /* BlurGradientImageRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlurGradientImageRenderer.swift; sourceTree = "<group>"; };
 		22SWUI012E4B000000000002 /* VariableBlur.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VariableBlur.swift; sourceTree = "<group>"; };
 		22SWUI032E4B000000000004 /* SwiftUIExampleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftUIExampleView.swift; sourceTree = "<group>"; };
+		375378F1442DDF7058401C0B /* BlurFilterFailureTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BlurFilterFailureTests.swift; sourceTree = "<group>"; };
+		470764F83ACEB3689A57EC6F /* TraitPinning.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TraitPinning.swift; sourceTree = "<group>"; };
+		4F8C693D70B2A124223AB57E /* BlurFilterReuseTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BlurFilterReuseTests.swift; sourceTree = "<group>"; };
+		5C0671D02FFF69D264E6C8B1 /* IncreaseContrastTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = IncreaseContrastTests.swift; sourceTree = "<group>"; };
+		5E36FDE87C92059EB074AF9D /* BlurAnimationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BlurAnimationTests.swift; sourceTree = "<group>"; };
+		60974F7941149417D0C92323 /* VariableBlurLayoutTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VariableBlurLayoutTests.swift; sourceTree = "<group>"; };
 		6825ED84067EA37689977422 /* ReflectionRenderingTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ReflectionRenderingTests.swift; sourceTree = "<group>"; };
-		FBF59FC9E6DA179E742F3F8E /* BlurUIKitRenderingTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BlurUIKitRenderingTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		7B5FB0DF0B2103806746779B /* VariableBlurFilterFailureTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VariableBlurFilterFailureTests.swift; sourceTree = "<group>"; };
+		9CF1BDB96B8BC029F9169A98 /* BlurFilterProviderTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BlurFilterProviderTests.swift; sourceTree = "<group>"; };
+		A3B4E26B921F1C110BA4A520 /* ReduceTransparencyTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ReduceTransparencyTests.swift; sourceTree = "<group>"; };
+		BFCDFD0F5E6A816099451403 /* BlurUIKit.xctestplan */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = file; path = BlurUIKit.xctestplan; sourceTree = "<group>"; };
+		FBF59FC9E6DA179E742F3F8E /* BlurUIKitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BlurUIKitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -86,9 +109,8 @@
 		01D9D8F5A02929BD3F8C4757 /* Tests */ = {
 			isa = PBXGroup;
 			children = (
-				37DC5D9C21EE052AE6C17FCB /* ReflectionRenderingTests */,
+				DAC46707DB37253B1479A7EE /* BlurUIKitTests */,
 			);
-			name = Tests;
 			path = Tests;
 			sourceTree = "<group>";
 		};
@@ -121,6 +143,7 @@
 				226E9CBE2D253B16007EFE4D /* Package.swift */,
 				229642C32C1E8768003C04C5 /* Products */,
 				01D9D8F5A02929BD3F8C4757 /* Tests */,
+				BFCDFD0F5E6A816099451403 /* BlurUIKit.xctestplan */,
 			);
 			sourceTree = "<group>";
 		};
@@ -128,7 +151,7 @@
 			isa = PBXGroup;
 			children = (
 				229642C22C1E8768003C04C5 /* BlurUIKitExample.app */,
-				FBF59FC9E6DA179E742F3F8E /* BlurUIKitRenderingTests.xctest */,
+				FBF59FC9E6DA179E742F3F8E /* BlurUIKitTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -171,13 +194,23 @@
 			path = Internal;
 			sourceTree = "<group>";
 		};
-		37DC5D9C21EE052AE6C17FCB /* ReflectionRenderingTests */ = {
+		DAC46707DB37253B1479A7EE /* BlurUIKitTests */ = {
 			isa = PBXGroup;
 			children = (
+				5E36FDE87C92059EB074AF9D /* BlurAnimationTests.swift */,
+				375378F1442DDF7058401C0B /* BlurFilterFailureTests.swift */,
+				9CF1BDB96B8BC029F9169A98 /* BlurFilterProviderTests.swift */,
+				4F8C693D70B2A124223AB57E /* BlurFilterReuseTests.swift */,
+				5C0671D02FFF69D264E6C8B1 /* IncreaseContrastTests.swift */,
+				A3B4E26B921F1C110BA4A520 /* ReduceTransparencyTests.swift */,
+				1AF59D77D3945E20010F2E80 /* ReflectionBlurViewTests.swift */,
+				470764F83ACEB3689A57EC6F /* TraitPinning.swift */,
+				7B5FB0DF0B2103806746779B /* VariableBlurFilterFailureTests.swift */,
+				13005B0856582148927C533B /* VariableBlurGradientTests.swift */,
+				60974F7941149417D0C92323 /* VariableBlurLayoutTests.swift */,
 				6825ED84067EA37689977422 /* ReflectionRenderingTests.swift */,
 			);
-			name = ReflectionRenderingTests;
-			path = ReflectionRenderingTests;
+			path = BlurUIKitTests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -200,9 +233,9 @@
 			productReference = 229642C22C1E8768003C04C5 /* BlurUIKitExample.app */;
 			productType = "com.apple.product-type.application";
 		};
-		9ABBE8BA7EC0C88D32CB4319 /* BlurUIKitRenderingTests */ = {
+		9ABBE8BA7EC0C88D32CB4319 /* BlurUIKitTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 08691C19EDA7546273B7EB07 /* Build configuration list for PBXNativeTarget "BlurUIKitRenderingTests" */;
+			buildConfigurationList = 08691C19EDA7546273B7EB07 /* Build configuration list for PBXNativeTarget "BlurUIKitTests" */;
 			buildPhases = (
 				B8115754F87A3FDB0925998F /* Sources */,
 				F6A54EF8A66D021AE593730B /* Frameworks */,
@@ -213,9 +246,9 @@
 			dependencies = (
 				9F12260F7FED101E888D70E8 /* PBXTargetDependency */,
 			);
-			name = BlurUIKitRenderingTests;
-			productName = BlurUIKitRenderingTests;
-			productReference = FBF59FC9E6DA179E742F3F8E /* BlurUIKitRenderingTests.xctest */;
+			name = BlurUIKitTests;
+			productName = BlurUIKitTests;
+			productReference = FBF59FC9E6DA179E742F3F8E /* BlurUIKitTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
@@ -251,7 +284,7 @@
 			projectRoot = "";
 			targets = (
 				229642C12C1E8768003C04C5 /* BlurUIKitExample */,
-				9ABBE8BA7EC0C88D32CB4319 /* BlurUIKitRenderingTests */,
+				9ABBE8BA7EC0C88D32CB4319 /* BlurUIKitTests */,
 			);
 		};
 /* End PBXProject section */
@@ -303,6 +336,17 @@
 			buildActionMask = 2147483647;
 			files = (
 				AAEFC312426D417B1B99A904 /* ReflectionRenderingTests.swift in Sources */,
+				506684A18703FE68B77DBF2B /* BlurAnimationTests.swift in Sources */,
+				CA738D061170886D27B5256E /* BlurFilterFailureTests.swift in Sources */,
+				590C6DAA7BC0BFE8C38A602F /* BlurFilterProviderTests.swift in Sources */,
+				A53F020B28859912EBE98A6E /* BlurFilterReuseTests.swift in Sources */,
+				01287A5D6D7EE2F9BEDD5D6C /* IncreaseContrastTests.swift in Sources */,
+				4AD080B5CD735C675200B2BF /* ReduceTransparencyTests.swift in Sources */,
+				E44464420B31DEE387D6C433 /* ReflectionBlurViewTests.swift in Sources */,
+				026E2B0F4F685C3B870E1404 /* TraitPinning.swift in Sources */,
+				85A684F716EA1B2ACAC1942C /* VariableBlurFilterFailureTests.swift in Sources */,
+				3A2CE1A705E4C37F0670647C /* VariableBlurGradientTests.swift in Sources */,
+				C5258C11FC0ED5A6602229B5 /* VariableBlurLayoutTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -518,7 +562,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = dev.tim.BlurUIKit.RenderingTests;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.tim.BlurUIKit.Tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 6.0;
@@ -539,7 +583,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = dev.tim.BlurUIKit.RenderingTests;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.tim.BlurUIKit.Tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 6.0;
@@ -552,7 +596,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		08691C19EDA7546273B7EB07 /* Build configuration list for PBXNativeTarget "BlurUIKitRenderingTests" */ = {
+		08691C19EDA7546273B7EB07 /* Build configuration list for PBXNativeTarget "BlurUIKitTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				8426F21DC6FD700144EF5202 /* Release */,

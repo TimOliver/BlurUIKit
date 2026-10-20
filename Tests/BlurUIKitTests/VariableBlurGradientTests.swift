@@ -1,8 +1,12 @@
 import XCTest
 import UIKit
 import SwiftUI
+#if SWIFT_PACKAGE
 import BlurSwiftUI
 @testable import BlurUIKit
+#else
+@testable import BlurUIKitExample
+#endif
 
 final class VariableBlurGradientTests: XCTestCase {
     @MainActor
@@ -271,9 +275,8 @@ final class VariableBlurGradientTests: XCTestCase {
             .dimmingClearExtension(.relative(fraction: 0.5))
             .dimmingFullColorInset(.relative(fraction: 0.5))
         let controller = UIHostingController(rootView: root)
-        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 200, height: 200))
+        let window = makePinnedWindow(frame: CGRect(x: 0, y: 0, width: 200, height: 200))
         window.rootViewController = controller
-        window.isHidden = false
         defer { window.isHidden = true }
         controller.view.layoutIfNeeded()
         try await Task.sleep(nanoseconds: 100_000_000)
@@ -301,9 +304,8 @@ final class VariableBlurGradientTests: XCTestCase {
                 .dimmingFullColorInset(.relative(fraction: 0.5))
         }
         let controller = UIHostingController(rootView: makeRoot())
-        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 200, height: 200))
+        let window = makePinnedWindow(frame: CGRect(x: 0, y: 0, width: 200, height: 200))
         window.rootViewController = controller
-        window.isHidden = false
         defer { window.isHidden = true }
         controller.view.layoutIfNeeded()
         try await Task.sleep(nanoseconds: 100_000_000)
@@ -380,9 +382,8 @@ final class VariableBlurGradientTests: XCTestCase {
             .dimmingStartingInset(.relative(fraction: 0.5))
             .dimmingOvershoot(.relative(fraction: 1.5))
         let controller = UIHostingController(rootView: root)
-        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 200, height: 200))
+        let window = makePinnedWindow(frame: CGRect(x: 0, y: 0, width: 200, height: 200))
         window.rootViewController = controller
-        window.isHidden = false
         defer { window.isHidden = true }
         controller.view.layoutIfNeeded()
         try await Task.sleep(nanoseconds: 100_000_000)
@@ -400,6 +401,7 @@ final class VariableBlurGradientTests: XCTestCase {
     @MainActor
     private func withBlur(_ body: (VariableBlurView) throws -> Void) rethrows {
         let host = makePinnedWindow()
+        defer { host.isHidden = true }
         let blur = VariableBlurView(frame: CGRect(x: 0, y: 0, width: 200, height: 200))
         blur.direction = .up
         host.addSubview(blur)
