@@ -15,14 +15,7 @@ final class PhotosViewController: UIViewController {
                                           collectionViewLayout: UICollectionViewFlowLayout())
     
     private let cellIdentifier = "CollectionCell"
-    private let cellMargin = 24.0
-    
-    private var readableWidth: CGFloat {
-        let safeAreaInsets = view.safeAreaInsets
-        let horizontalSafeWidth = safeAreaInsets.left + safeAreaInsets.right
-        let availableViewWidth = view.frame.width - (horizontalSafeWidth + cellMargin * 2.0)
-        return min(650, min(view.readableContentGuide.layoutFrame.width, availableViewWidth))
-    }
+    private let cellMargin: CGFloat = 24.0
     
     init() {
         super.init(nibName: nil, bundle: nil)
@@ -32,7 +25,8 @@ final class PhotosViewController: UIViewController {
 
         collectionView.register(PhotosViewCollectionCell.self, forCellWithReuseIdentifier: cellIdentifier)
         collectionView.dataSource = self
-        collectionView.delegate = self
+        // Account for the safe area once, while allowing photos to scroll behind the blur.
+        collectionView.contentInsetAdjustmentBehavior = .never
         view.addSubview(collectionView)
         
         statusBarBlurView.dimmingTintColor = .systemBackground
@@ -55,21 +49,33 @@ final class PhotosViewController: UIViewController {
         statusBarBlurView.frame = CGRect(origin: .zero,
                                          size: CGSize(width: view.bounds.width, height: view.safeAreaInsets.top))
         
-        // Clamp the collection view to the screen's readable width
-        let insets = (view.frame.width - readableWidth) / 2.0
         collectionView.frame = view.bounds
-        collectionView.contentInset.top = max(view.safeAreaInsets.top, 24)
-        collectionView.contentInset.top = max(view.safeAreaInsets.bottom, 24)
-        collectionView.contentInset.left = insets + view.safeAreaInsets.left
-        collectionView.contentInset.right = insets + view.safeAreaInsets.right
-        collectionView.collectionViewLayout.invalidateLayout()
-    }
+        let contentInset = UIEdgeInsets(top: max(view.safeAreaInsets.top, cellMargin),
+                                        left: 0,
+                                        bottom: max(view.safeAreaInsets.bottom, cellMargin),
+                                        right: 0)
+        if collectionView.contentInset != contentInset {
+            collectionView.contentInset = contentInset
+        }
 
-    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
-        super.viewWillTransition(to: size, with: coordinator)
-        coordinator.animate(alongsideTransition: { (_) in
-            self.collectionView.collectionViewLayout.invalidateLayout()
-        }, completion: nil)
+        // Center one column within the safe area, including when its sides are asymmetric.
+        let safeFrame = view.safeAreaLayoutGuide.layoutFrame
+        let itemWidth = max(0, min(650, view.readableContentGuide.layoutFrame.width,
+                                   safeFrame.width - cellMargin * 2))
+        let horizontalMargin = (safeFrame.width - itemWidth) * 0.5
+        let sectionInset = UIEdgeInsets(top: 0,
+                                        left: safeFrame.minX - view.bounds.minX + horizontalMargin,
+                                        bottom: 0,
+                                        right: view.bounds.maxX - safeFrame.maxX + horizontalMargin)
+        let itemSize = CGSize(width: itemWidth, height: itemWidth * 9.0 / 16.0)
+        guard let layout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout else { return }
+        // These setters invalidate the flow layout only when its geometry actually changes.
+        if layout.itemSize != itemSize {
+            layout.itemSize = itemSize
+        }
+        if layout.sectionInset != sectionInset {
+            layout.sectionInset = sectionInset
+        }
     }
 }
 
@@ -88,12 +94,3 @@ extension PhotosViewController: UICollectionViewDataSource {
     }
 }
 
-extension PhotosViewController: UICollectionViewDelegateFlowLayout {
-    func collectionView(_ collectionView: UICollectionView,
-                        layout collectionViewLayout: UICollectionViewLayout,
-                        sizeForItemAt indexPath: IndexPath) -> CGSize {
-        // Given the readable width of the available screen, apply a standardized aspect ratio
-        // to get a consistent height
-        CGSize(width: readableWidth, height: readableWidth / 1.777)
-    }
-}
