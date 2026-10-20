@@ -15,9 +15,13 @@ final class PhotosViewController: UIViewController {
                                           collectionViewLayout: UICollectionViewFlowLayout())
     
     private let cellIdentifier = "CollectionCell"
+    private let cellMargin = 24.0
     
     private var readableWidth: CGFloat {
-        view.readableContentGuide.layoutFrame.width
+        let safeAreaInsets = view.safeAreaInsets
+        let horizontalSafeWidth = safeAreaInsets.left + safeAreaInsets.right
+        let availableViewWidth = view.frame.width - (horizontalSafeWidth + cellMargin * 2.0)
+        return min(650, min(view.readableContentGuide.layoutFrame.width, availableViewWidth))
     }
     
     init() {
@@ -52,11 +56,12 @@ final class PhotosViewController: UIViewController {
                                          size: CGSize(width: view.bounds.width, height: view.safeAreaInsets.top))
         
         // Clamp the collection view to the screen's readable width
-        let readableWidth = view.readableContentGuide.layoutFrame.width
         let insets = (view.frame.width - readableWidth) / 2.0
         collectionView.frame = view.bounds
-        collectionView.contentInset.left = insets
-        collectionView.contentInset.right = insets
+        collectionView.contentInset.top = max(view.safeAreaInsets.top, 24)
+        collectionView.contentInset.top = max(view.safeAreaInsets.bottom, 24)
+        collectionView.contentInset.left = insets + view.safeAreaInsets.left
+        collectionView.contentInset.right = insets + view.safeAreaInsets.right
         collectionView.collectionViewLayout.invalidateLayout()
     }
 
