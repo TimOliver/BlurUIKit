@@ -33,6 +33,63 @@ final class BlurAnimationTests: XCTestCase {
         XCTAssertEqual(controlPoints(of: try XCTUnwrap(animation.timingFunction)), controlPoints(of: .blurEaseIn))
     }
 
+    // MARK: - Filter Cleanup
+
+    @MainActor
+    func testSettingZeroRadiusRemovesTheFilter() {
+        let view = UIView(frame: CGRect(x: 0, y: 0, width: 100, height: 100))
+        view.blurRadius = 20
+        XCTAssertEqual(view.layer.filters?.count, 1)
+
+        view.blurRadius = 0
+
+        XCTAssertNil(view.layer.filters)
+        XCTAssertEqual(view.blurRadius, 0)
+    }
+
+    @MainActor
+    func testRemovingTheBlurLeavesOtherFiltersInPlace() throws {
+        let view = UIView(frame: CGRect(x: 0, y: 0, width: 100, height: 100))
+        let otherFilter = try XCTUnwrap(BlurFilterProvider.blurFilter(named: "colorInvert"))
+        view.layer.filters = [otherFilter]
+        view.blurRadius = 20
+
+        view.blurRadius = 0
+
+        XCTAssertEqual(view.layer.filters?.count, 1)
+        XCTAssertTrue((view.layer.filters?.first as? NSObject) === otherFilter)
+    }
+
+    @MainActor
+    func testAnimatingToZeroKeepsTheFilterUntilTheAnimationEnds() {
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 100, height: 100))
+        let view = UIView(frame: window.bounds)
+        window.addSubview(view)
+        window.isHidden = false
+        view.blurRadius = 20
+
+        view.setBlurRadiusAnimated(radius: 0, duration: 0.05)
+        XCTAssertEqual(view.layer.filters?.count, 1)
+
+        let removed = expectation(for: NSPredicate { _, _ in view.layer.filters == nil },
+                                  evaluatedWith: nil)
+        wait(for: [removed], timeout: 2)
+    }
+
+    @MainActor
+    func testAnimatingAwayFromZeroKeepsTheFilter() {
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 100, height: 100))
+        let view = UIView(frame: window.bounds)
+        window.addSubview(view)
+        window.isHidden = false
+
+        view.setBlurRadiusAnimated(radius: 20, duration: 0.05)
+        RunLoop.main.run(until: Date().addingTimeInterval(0.3))
+
+        XCTAssertEqual(view.layer.filters?.count, 1)
+        XCTAssertEqual(view.blurRadius, 20)
+    }
+
     // MARK: - Timing Overrides
 
     @MainActor
