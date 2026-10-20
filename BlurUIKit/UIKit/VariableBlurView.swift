@@ -176,6 +176,13 @@ public class VariableBlurView: UIView {
     private weak var backdropView: UIView?
     private weak var overlayView: UIView?
 
+    /// The blur filter most recently installed on the backdrop, used to skip redundant rebuilds.
+    /// Weak, so it clears itself if UIKit replaces the backdrop's filters and releases ours.
+    private weak var installedBlurFilter: NSObject?
+
+    /// Set when the installed filter is out of date, or the backdrop needs a fresh capture.
+    private var needsBlurFilterRebuild = true
+
     /// Reports whether the system Reduce Transparency setting is on. Replaceable in tests.
     internal static var isReduceTransparencyEnabled: () -> Bool = { UIAccessibility.isReduceTransparencyEnabled }
 
@@ -218,8 +225,16 @@ public class VariableBlurView: UIView {
 
     public override func didMoveToSuperview() {
         super.didMoveToSuperview()
+        needsBlurFilterRebuild = true
         configureView()
         makeDimmingViewIfNeeded()
+    }
+
+    public override func didMoveToWindow() {
+        super.didMoveToWindow()
+        // A new window means new content behind the backdrop, so capture it afresh
+        needsBlurFilterRebuild = true
+        setNeedsLayout()
     }
 
     public override func layoutSubviews() {
@@ -253,12 +268,13 @@ public class VariableBlurView: UIView {
     }
 
     @objc private func reduceTransparencyStatusDidChange() {
+        needsBlurFilterRebuild = true
         setNeedsLayout()
     }
 
     // MARK: - Private
 
-    // Configure the blur view by finding internal subviews and applying a fresh blur filter.
+    // Configure the blur view by finding internal subviews and applying the blur filter.
     // Subviews are cached via weak references and re-looked-up when needed, since
     // UIVisualEffectView may rebuild its subview hierarchy on trait changes.
     private func configureView() {
@@ -270,7 +286,7 @@ public class VariableBlurView: UIView {
         }
         overlayView?.isHidden = true
 
-        // Create a fresh filter and apply it to the backdrop view
+        // Apply a fresh filter to the backdrop view if the current one is out of date
         updateBlurFilter()
     }
 
@@ -296,18 +312,34 @@ public class VariableBlurView: UIView {
         setNeedsUpdate()
     }
 
-    // Update the parameters of the blur filter when the state in this view changes
+    // Install a fresh blur filter on the backdrop when the current one is out of date.
+    // Changing an installed filter's values has no effect, so a new filter is always created.
     private func updateBlurFilter() {
-        guard let gradientMaskImage, let variableBlurFilter = BlurFilterProvider.blurFilter(named: "variableBlur") else { return }
+        guard let gradientMaskImage else { return }
+
+        if backdropView?.superview !== blurEffectView {
+            backdropView = BlurFilterProvider.findSubview(in: blurEffectView, containing: "backdrop")
+        }
+        guard let backdropView else { return }
+
+        // Skip the rebuild if nothing changed and our filter is still the one installed.
+        // UIKit may swap out the backdrop's filters (or the backdrop itself) on its own,
+        // so check the filter actually on the layer rather than trusting our own state.
+        if !needsBlurFilterRebuild,
+           let installedBlurFilter,
+           (backdropView.layer.filters?.first as? NSObject) === installedBlurFilter {
+            return
+        }
+
+        guard let variableBlurFilter = BlurFilterProvider.blurFilter(named: "variableBlur") else { return }
         variableBlurFilter.setValue(gradientMaskImage, forKey: "inputMaskImage")
         variableBlurFilter.setValue(effectiveMaximumBlurRadius, forKey: "inputRadius")
         variableBlurFilter.setValue(true, forKey: "inputNormalizeEdges")
 
-        if backdropView == nil {
-            backdropView = BlurFilterProvider.findSubview(in: blurEffectView, containing: "backdrop")
-        }
-        backdropView?.layer.filters = [variableBlurFilter]
-        backdropView?.layer.setValue(0.75, forKey: "scale")
+        backdropView.layer.filters = [variableBlurFilter]
+        backdropView.layer.setValue(0.75, forKey: "scale")
+        installedBlurFilter = variableBlurFilter
+        needsBlurFilterRebuild = false
     }
 
     // Update the alpha value of the colored gradient as needed
@@ -365,6 +397,7 @@ public class VariableBlurView: UIView {
 extension VariableBlurView {
     /// Schedules the backdrop filter to be recreated without invalidating its gradient images.
     internal func setNeedsBlurFilterUpdate() {
+        needsBlurFilterRebuild = true
         setNeedsLayout()
     }
 
@@ -391,6 +424,7 @@ extension VariableBlurView {
     // Some state changed to the point where we need to regenerate the blur mask image
     private func resetBlurMask() {
         gradientMaskImage = nil
+        needsBlurFilterRebuild = true
         setNeedsUpdate()
     }
 
