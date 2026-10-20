@@ -326,6 +326,9 @@ public class VariableBlurView: UIView {
     // Install a fresh blur filter on the backdrop when the current one is out of date.
     // Changing an installed filter's values has no effect, so a new filter is always created.
     private func updateBlurFilter() {
+        // Nothing to install while the blur is hidden for Reduce Transparency. A pending rebuild
+        // stays flagged, so the filter is brought up to date once the blur is shown again.
+        guard !blurEffectView.isHidden else { return }
         if backdropView?.superview !== blurEffectView {
             backdropView = BlurFilterProvider.findSubview(in: blurEffectView, containing: "backdrop")
         }

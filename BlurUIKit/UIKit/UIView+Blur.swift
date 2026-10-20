@@ -47,7 +47,8 @@ extension UIView {
     }
 
     /// Apply a gaussian blur to this view with an animation.
-    /// An interrupted blur animation continues from its currently displayed radius.
+    /// An interrupted blur animation continues from its currently displayed radius, and a
+    /// radius that is already showing is applied without an animation.
     /// If a replacement filter cannot be created, the current blur and animation are preserved.
     /// - Parameters:
     ///   - radius: The blur radius to animate to.
@@ -66,6 +67,13 @@ extension UIView {
         }
 
         let currentRadius = inFlightBlurRadius ?? blurRadius
+
+        // Nothing to animate when that radius is already showing. Pin an in-flight animation
+        // where it is; otherwise leave the layer alone rather than install an idle filter.
+        guard radius != currentRadius else {
+            if layer.animation(forKey: blurAnimationKey) != nil { blurRadius = radius }
+            return
+        }
 
         // Keep a filter in place even when clearing the blur, so there is something to animate.
         guard let filter = installBlurFilter(radius: radius) else { return }

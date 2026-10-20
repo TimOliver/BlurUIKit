@@ -33,6 +33,41 @@ final class ReduceTransparencyTests: XCTestCase {
         XCTAssertFalse(try effectView(in: blur).isHidden)
     }
 
+    @MainActor
+    func testHiddenBlurDefersFilterCreationUntilItIsShownAgain() throws {
+        var isEnabled = true
+        stubReduceTransparency { isEnabled }
+
+        // Count filter requests while still vending real filters.
+        let realProvider = BlurFilterProvider.shared
+        var requestedFilters: [String] = []
+        BlurFilterProvider.shared = BlurFilterProvider(discover: {
+            { name in
+                requestedFilters.append(name)
+                return realProvider.makeFilter(named: name)
+            }
+        })
+        defer { BlurFilterProvider.shared = realProvider }
+
+        try withBlur { blur in
+            XCTAssertTrue(try effectView(in: blur).isHidden)
+
+            // Refresh requests made while hidden, as a scrolling reflection makes every frame.
+            for _ in 1...3 {
+                blur.setNeedsBlurFilterUpdate()
+                blur.layoutIfNeeded()
+            }
+            XCTAssertEqual(requestedFilters, [])
+
+            isEnabled = false
+            NotificationCenter.default.post(name: UIAccessibility.reduceTransparencyStatusDidChangeNotification, object: nil)
+            blur.layoutIfNeeded()
+            XCTAssertFalse(try effectView(in: blur).isHidden)
+            XCTAssertEqual(requestedFilters, ["variableBlur"])
+            XCTAssertEqual(try installedFilterName(in: blur), "variableBlur")
+        }
+    }
+
     // MARK: - Opting Out
 
     @MainActor
@@ -128,6 +163,12 @@ final class ReduceTransparencyTests: XCTestCase {
     @MainActor
     private func effectView(in blur: VariableBlurView) throws -> UIVisualEffectView {
         try XCTUnwrap(blur.subviews.compactMap { $0 as? UIVisualEffectView }.first)
+    }
+
+    @MainActor
+    private func installedFilterName(in blur: VariableBlurView) throws -> String? {
+        let backdrop = try XCTUnwrap(BlurFilterProvider.findSubview(in: try effectView(in: blur), containing: "backdrop"))
+        return (backdrop.layer.filters?.first as? NSObject)?.value(forKey: "name") as? String
     }
 
     @MainActor

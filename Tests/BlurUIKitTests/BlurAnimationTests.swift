@@ -90,6 +90,8 @@ final class BlurAnimationTests: XCTestCase {
 
             for duration: TimeInterval in [0, -1] {
                 XCTContext.runActivity(named: "Duration \(duration) applies and clears immediately") { _ in
+                    // Start from a blurred view, so clearing it has an animation to interrupt.
+                    view.blurRadius = 40
                     view.setBlurRadiusAnimated(radius: 0, duration: 2)
                     XCTAssertNotNil(view.layer.animation(forKey: animationKey))
 
@@ -123,6 +125,39 @@ final class BlurAnimationTests: XCTestCase {
 
             XCTAssertNil(view.layer.animation(forKey: animationKey))
             XCTAssertEqual(try presentedRadius(of: view), 10, accuracy: 0.5)
+        }
+    }
+
+    // MARK: - Redundant Changes
+
+    @MainActor
+    func testAnimatingToTheCurrentRadiusAppliesItWithoutAnimating() {
+        let view = UIView(frame: CGRect(x: 0, y: 0, width: 100, height: 100))
+
+        XCTContext.runActivity(named: "Clearing an unblurred view installs nothing") { _ in
+            view.setBlurRadiusAnimated(radius: 0, duration: 1)
+            XCTAssertNil(view.layer.filters)
+            XCTAssertNil(view.layer.animation(forKey: animationKey))
+        }
+
+        XCTContext.runActivity(named: "Re-applying the current radius keeps the existing filter") { _ in
+            view.blurRadius = 20
+            let installed = view.layer.filters?.first as? NSObject
+            view.setBlurRadiusAnimated(radius: 20, duration: 1)
+            XCTAssertEqual(view.blurRadius, 20)
+            XCTAssertTrue((view.layer.filters?.first as? NSObject) === installed)
+            XCTAssertEqual(view.layer.filters?.count, 1)
+            XCTAssertNil(view.layer.animation(forKey: animationKey))
+        }
+
+        XCTContext.runActivity(named: "Retargeting to the start radius before presentation cancels the animation") { _ in
+            view.blurRadius = 4
+            view.setBlurRadiusAnimated(radius: 20, duration: 1)
+            XCTAssertNotNil(view.layer.animation(forKey: animationKey))
+
+            view.setBlurRadiusAnimated(radius: 4, duration: 1)
+            XCTAssertEqual(view.blurRadius, 4)
+            XCTAssertNil(view.layer.animation(forKey: animationKey))
         }
     }
 
