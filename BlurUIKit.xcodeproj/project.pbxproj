@@ -21,11 +21,14 @@
 		22C0DE022F9A000000000002 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22C0DE012F9A000000000001 /* SceneDelegate.swift */; };
 		22D5CBC72CAAF0DE007320EE /* PhotosViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22D5CBC62CAAF0DE007320EE /* PhotosViewController.swift */; };
 		22F7A97D2E12E3A300FC5943 /* UIView+Blur.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22F7A97C2E12E39E00FC5943 /* UIView+Blur.swift */; };
+		22EF00012F9B000000000001 /* UIVisualEffectView+Blur.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22EF00002F9B000000000000 /* UIVisualEffectView+Blur.swift */; };
+		22EF00052F9B000000000005 /* VisualEffectViewBlurTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22EF00042F9B000000000004 /* VisualEffectViewBlurTests.swift */; };
+		22EF00072F9B000000000007 /* VisualEffectRenderingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22EF00062F9B000000000006 /* VisualEffectRenderingTests.swift */; };
 		22F7A97F2E12E67900FC5943 /* BlurViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22F7A97E2E12E67800FC5943 /* BlurViewController.swift */; };
 		22F9D8652D160890007E1386 /* PhotosViewCollectionCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22F9D8642D160890007E1386 /* PhotosViewCollectionCell.swift */; };
 		22GRAD012E3D000000000001 /* BlurGradientImageRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22GRAD002E3D000000000000 /* BlurGradientImageRenderer.swift */; };
 		22SWUI002E4B000000000001 /* VariableBlur.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22SWUI012E4B000000000002 /* VariableBlur.swift */; };
-		22SWUI022E4B000000000003 /* SwiftUIExampleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22SWUI032E4B000000000004 /* SwiftUIExampleView.swift */; };
+		22EF00032F9B000000000003 /* VisualEffectViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22EF00022F9B000000000002 /* VisualEffectViewController.swift */; };
 		3A2CE1A705E4C37F0670647C /* VariableBlurGradientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13005B0856582148927C533B /* VariableBlurGradientTests.swift */; };
 		4AD080B5CD735C675200B2BF /* ReduceTransparencyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B4E26B921F1C110BA4A520 /* ReduceTransparencyTests.swift */; };
 		506684A18703FE68B77DBF2B /* BlurAnimationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E36FDE87C92059EB074AF9D /* BlurAnimationTests.swift */; };
@@ -67,13 +70,16 @@
 		22C0DE012F9A000000000001 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		22D5CBC62CAAF0DE007320EE /* PhotosViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotosViewController.swift; sourceTree = "<group>"; };
 		22F7A97C2E12E39E00FC5943 /* UIView+Blur.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIView+Blur.swift"; sourceTree = "<group>"; };
+		22EF00002F9B000000000000 /* UIVisualEffectView+Blur.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIVisualEffectView+Blur.swift"; sourceTree = "<group>"; };
+		22EF00042F9B000000000004 /* VisualEffectViewBlurTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VisualEffectViewBlurTests.swift; sourceTree = "<group>"; };
+		22EF00062F9B000000000006 /* VisualEffectRenderingTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VisualEffectRenderingTests.swift; sourceTree = "<group>"; };
 		22F7A97E2E12E67800FC5943 /* BlurViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlurViewController.swift; sourceTree = "<group>"; };
 		22F9D8642D160890007E1386 /* PhotosViewCollectionCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotosViewCollectionCell.swift; sourceTree = "<group>"; };
 		22F9D8662D162106007E1386 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
 		22F9D8672D162106007E1386 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		22GRAD002E3D000000000000 /* BlurGradientImageRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlurGradientImageRenderer.swift; sourceTree = "<group>"; };
 		22SWUI012E4B000000000002 /* VariableBlur.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VariableBlur.swift; sourceTree = "<group>"; };
-		22SWUI032E4B000000000004 /* SwiftUIExampleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftUIExampleView.swift; sourceTree = "<group>"; };
+		22EF00022F9B000000000002 /* VisualEffectViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisualEffectViewController.swift; sourceTree = "<group>"; };
 		375378F1442DDF7058401C0B /* BlurFilterFailureTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BlurFilterFailureTests.swift; sourceTree = "<group>"; };
 		470764F83ACEB3689A57EC6F /* TraitPinning.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TraitPinning.swift; sourceTree = "<group>"; };
 		4F8C693D70B2A124223AB57E /* BlurFilterReuseTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BlurFilterReuseTests.swift; sourceTree = "<group>"; };
@@ -128,6 +134,7 @@
 				2278AEB13070B93300748C72 /* ReflectionBlurView.swift */,
 				229642DA2C1E8A3F003C04C5 /* VariableBlurView.swift */,
 				22F7A97C2E12E39E00FC5943 /* UIView+Blur.swift */,
+				22EF00002F9B000000000000 /* UIVisualEffectView+Blur.swift */,
 			);
 			path = UIKit;
 			sourceTree = "<group>";
@@ -166,7 +173,7 @@
 				22F9D8642D160890007E1386 /* PhotosViewCollectionCell.swift */,
 				22F7A97E2E12E67800FC5943 /* BlurViewController.swift */,
 				2278AEB53070BEF600748C72 /* ReflectionBlurViewController.swift */,
-				22SWUI032E4B000000000004 /* SwiftUIExampleView.swift */,
+				22EF00022F9B000000000002 /* VisualEffectViewController.swift */,
 				229642CE2C1E8769003C04C5 /* Assets.xcassets */,
 				229642D02C1E8769003C04C5 /* LaunchScreen.storyboard */,
 				229642D32C1E8769003C04C5 /* Info.plist */,
@@ -209,6 +216,8 @@
 				13005B0856582148927C533B /* VariableBlurGradientTests.swift */,
 				60974F7941149417D0C92323 /* VariableBlurLayoutTests.swift */,
 				6825ED84067EA37689977422 /* ReflectionRenderingTests.swift */,
+				22EF00042F9B000000000004 /* VisualEffectViewBlurTests.swift */,
+				22EF00062F9B000000000006 /* VisualEffectRenderingTests.swift */,
 			);
 			path = BlurUIKitTests;
 			sourceTree = "<group>";
@@ -314,6 +323,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				22F7A97D2E12E3A300FC5943 /* UIView+Blur.swift in Sources */,
+				22EF00012F9B000000000001 /* UIVisualEffectView+Blur.swift in Sources */,
 				229642CA2C1E8768003C04C5 /* MapViewController.swift in Sources */,
 				22F9D8652D160890007E1386 /* PhotosViewCollectionCell.swift in Sources */,
 				229642C62C1E8768003C04C5 /* AppDelegate.swift in Sources */,
@@ -327,7 +337,7 @@
 				22D5CBC72CAAF0DE007320EE /* PhotosViewController.swift in Sources */,
 				22F7A97F2E12E67900FC5943 /* BlurViewController.swift in Sources */,
 				22SWUI002E4B000000000001 /* VariableBlur.swift in Sources */,
-				22SWUI022E4B000000000003 /* SwiftUIExampleView.swift in Sources */,
+				22EF00032F9B000000000003 /* VisualEffectViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -347,6 +357,8 @@
 				85A684F716EA1B2ACAC1942C /* VariableBlurFilterFailureTests.swift in Sources */,
 				3A2CE1A705E4C37F0670647C /* VariableBlurGradientTests.swift in Sources */,
 				C5258C11FC0ED5A6602229B5 /* VariableBlurLayoutTests.swift in Sources */,
+				22EF00052F9B000000000005 /* VisualEffectViewBlurTests.swift in Sources */,
+				22EF00072F9B000000000007 /* VisualEffectRenderingTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

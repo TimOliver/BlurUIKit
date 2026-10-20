@@ -18,6 +18,7 @@
 * Dimming and blur gradients can be configured independently.
 * Highly optimized to avoid regenerating gradient mask images unless needed.
 * SwiftUI support via the `VariableBlur` view wrapper.
+* Adjusts and animates the blur radius and dimming of standard `UIVisualEffectView` instances.
 
 # Examples
 
@@ -85,6 +86,32 @@ redSquare.setBlurRadiusAnimated(radius: 0, duration: 0.6)
 
 // Or hold the blur for a moment first, then animate it away
 redSquare.setBlurRadiusAnimated(radius: 0, duration: 0.6, delay: 0.3)
+
+```
+
+### UIVisualEffectView Extension
+
+`BlurUIKit` can also adjust a standard `UIVisualEffectView` in place: the radius of its `UIBlurEffect`,
+and the opacity of the tint UIKit draws over the blur. Both are plain properties that animate when set
+inside a `UIView.animate` block, so content behind a dialog can come back into focus as the dialog goes away.
+
+The rest of the effect follows the radius. Below UIKit's default, the saturation boost and other
+filters UIKit pairs with its blur scale back in proportion and the backdrop is captured at a higher
+resolution, so a few points reads as a crisp depth-of-field blur and zero looks like no effect at all.
+
+```swift
+
+// Softly blur and dim the content behind a dialog
+let backdrop = UIVisualEffectView(effect: UIBlurEffect(style: .regular))
+backdrop.blurEffectRadius = 6   // In points. UIKit's default for this style is 20 to 30.
+backdrop.dimmingAlpha = 0.5     // 1 is UIKit's own tint, 0 is just the blur.
+
+// Bring the content back into focus alongside the dialog's own animation
+UIView.animate(withDuration: 0.5) {
+    dialog.alpha = 0
+    backdrop.blurEffectRadius = 0
+    backdrop.dimmingAlpha = 0
+}
 
 ```
 

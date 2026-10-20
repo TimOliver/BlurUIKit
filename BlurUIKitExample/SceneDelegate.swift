@@ -3,7 +3,6 @@
 //  BlurUIKit
 //
 
-import SwiftUI
 import UIKit
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
@@ -27,20 +26,12 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             MapViewController(),
             BlurViewController(),
             ReflectionBlurViewController(),
-            swiftUIController()
+            VisualEffectViewController()
         ]
 
         let window = UIWindow(windowScene: windowScene)
         window.rootViewController = tabBarController
         self.window = window
         window.makeKeyAndVisible()
-    }
-
-    private func swiftUIController() -> UIHostingController<SwiftUIExampleView> {
-        let viewController = UIHostingController(rootView: SwiftUIExampleView())
-        viewController.tabBarItem = UITabBarItem(title: "SwiftUI",
-                                                image: UIImage(systemName: "swift"),
-                                                selectedImage: UIImage(systemName: "swift"))
-        return viewController
     }
 }
