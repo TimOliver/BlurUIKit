@@ -348,7 +348,7 @@ public class VariableBlurView: UIView {
             return
         }
 
-        guard let variableBlurFilter = BlurFilterProvider.blurFilter(named: "variableBlur") else { return }
+        guard let variableBlurFilter = BlurFilterProvider.shared.makeFilter(named: "variableBlur") else { return }
         variableBlurFilter.setValue(gradientMaskImage, forKey: "inputMaskImage")
         variableBlurFilter.setValue(effectiveMaximumBlurRadius, forKey: "inputRadius")
         variableBlurFilter.setValue(true, forKey: "inputNormalizeEdges")

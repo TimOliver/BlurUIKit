@@ -48,7 +48,7 @@ final class BlurFilterReuseTests: XCTestCase {
         try withBlur { blur, _ in
             let backdrop = try backdropView(in: blur)
             let installed = try filter(in: blur)
-            backdrop.layer.filters = [try XCTUnwrap(BlurFilterProvider.blurFilter(named: "gaussianBlur"))]
+            backdrop.layer.filters = [try XCTUnwrap(BlurFilterProvider.shared.makeFilter(named: "gaussianBlur"))]
 
             blur.setNeedsLayout()
             blur.layoutIfNeeded()

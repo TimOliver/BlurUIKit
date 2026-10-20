@@ -208,7 +208,7 @@ extension UIView {
     // We can't update the radius of an existing filter. Prepare its replacement
     // before removing it, so an unavailable filter leaves the working blur intact.
     private func installBlurFilter(radius: CGFloat) -> NSObject? {
-        guard let newFilter = BlurFilterProvider.blurFilter(named: "gaussianBlur") else { return nil }
+        guard let newFilter = BlurFilterProvider.shared.makeFilter(named: "gaussianBlur") else { return nil }
         newFilter.setValue(radius, forKey: "inputRadius")
         removeBlurFilter()
         self.layer.filters = (self.layer.filters ?? []) + [newFilter]

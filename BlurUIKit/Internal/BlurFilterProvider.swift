@@ -22,57 +22,34 @@
 
 import UIKit
 
-/// Discovers and creates the Core Animation filters used by the framework's public blur APIs.
-///
-/// Discovery is deferred until a filter is requested. A successfully discovered factory is
-/// cached, while unsuccessful discovery can be retried on a later request. Filter instances
-/// are created separately for each request so callers can configure them independently.
+/// Creates the private Core Animation filters behind the public blur APIs. The filter class is
+/// discovered from a UIKit backdrop on the first request and cached; if that fails, the next
+/// request tries again. Each request gets a fresh filter, so callers can configure theirs freely.
 @MainActor internal class BlurFilterProvider {
 
-    /// Creates a new filter for the supplied Core Animation filter type, such as
-    /// `"gaussianBlur"` or `"variableBlur"`, or returns nil if that filter cannot be created.
-    ///
-    /// The closure runs on the main actor, matching the UIKit views and layers using its result.
+    /// Creates a filter of the given type, such as `"gaussianBlur"` or `"variableBlur"`, or nil.
     typealias FilterFactory = @MainActor (String) -> NSObject?
 
-    /// The provider used by `blurFilter(named:)` and, through it, the public blur APIs.
-    /// Tests can replace this instance to simulate discovery or filter-creation failures.
+    /// The provider behind the public blur APIs. Tests replace it to simulate failures.
     static var shared = BlurFilterProvider()
 
-    /// Resolves a factory capable of creating filters, rather than creating a filter itself.
-    /// Called once per request while no factory is cached. Returning nil leaves discovery
-    /// pending so a later request can retry. Supplied at initialization for failure testing.
+    /// Resolves the factory on demand. Returning nil leaves discovery to be retried on the next request.
     private let discover: @MainActor () -> FilterFactory?
 
-    /// The successfully discovered factory, reused to create subsequent filter instances.
-    /// Nil means discovery has not run or its most recent attempt failed. A factory remains
-    /// cached even if it returns nil for an individual filter-creation request.
+    /// The discovered factory, kept even if it fails to create an individual filter.
     private var filterFactory: FilterFactory?
 
-    /// Creates a provider that discovers UIKit's filter factory on its first filter request.
-    /// Initialization itself does not create a visual effect view or perform discovery.
+    /// Creates a provider that discovers UIKit's filter factory on its first request.
     convenience init() {
         self.init(discover: Self.discoverFilterFactory)
     }
 
-    /// Creates a provider with a custom factory-discovery closure.
-    ///
-    /// Use this initializer to simulate unavailable factories or failed filter creation in tests.
-    /// The closure is stored without being called during initialization.
-    ///
-    /// - Parameter discover: A main-actor closure returning a filter factory, or nil if one is
-    ///   unavailable. A successful result is cached; nil permits another attempt on the next request.
+    /// Creates a provider with a custom discovery closure, for simulating failures in tests.
     init(discover: @escaping @MainActor () -> FilterFactory?) {
         self.discover = discover
     }
 
-    /// Creates a filter, discovering and caching its factory if necessary.
-    ///
-    /// Each call makes at most one discovery attempt and one factory invocation. Failed
-    /// discovery is retried only on a later call. Failure to create an individual filter
-    /// leaves a successfully discovered factory cached for subsequent requests.
-    ///
-    /// - Parameter name: The Core Animation filter type, such as `"gaussianBlur"` or `"variableBlur"`.
+    /// Creates a filter of the given type, discovering the factory first if there isn't one yet.
     /// - Returns: A new filter, or nil if discovery or filter creation fails.
     func makeFilter(named name: String) -> NSObject? {
         if filterFactory == nil {
@@ -82,12 +59,7 @@ import UIKit
     }
 
     /// Extracts the filter class from a temporary UIKit backdrop and checks for `filterWithType:`.
-    ///
-    /// The returned closure captures only the class and selector. The temporary visual effect
-    /// view and its existing filter are not retained by the factory.
-    ///
-    /// - Returns: A factory that dynamically invokes `filterWithType:`, or nil if UIKit exposes
-    ///   no backdrop filter or its class does not support that selector.
+    /// The factory captures only the class and selector, not the temporary view or its filter.
     private static func discoverFilterFactory() -> FilterFactory? {
         let blurView = UIVisualEffectView(effect: UIBlurEffect(style: .regular))
         guard let backdropView = findSubview(in: blurView, containing: "backdrop"),
@@ -104,17 +76,7 @@ import UIKit
         }
     }
 
-    /// Creates a filter through the shared provider, using its discovery cache and retry behavior.
-    /// - Parameter name: The Core Animation filter type to create.
-    /// - Returns: A new filter, or nil if discovery or filter creation fails.
-    static func blurFilter(named name: String) -> NSObject? {
-        shared.makeFilter(named: name)
-    }
-
-    /// Loop through a view's subviews and find the one with its class name containing the provided string
-    /// - Parameter view: The view whose subviews will be searched.
-    /// - Parameter name: The portion of the name of the subview to find.
-    /// - Returns: The subview if it is found, or nil otherwise.
+    /// Finds the first subview whose class name contains the given string, ignoring case.
     static func findSubview(in view: UIView, containing name: String) -> UIView? {
         let lowercasedName = name.lowercased()
         return view.subviews.first { NSStringFromClass(type(of: $0)).lowercased().contains(lowercasedName) }
