@@ -24,15 +24,19 @@ import UIKit
 
 /// A UIView that contains a blur overlay that gradually 'ramps' up
 /// in blur intensity from one edge to the other.
+///
 /// This is great for separating separate layers of content (such as the iOS status bar)
 /// without any hard border lines.
 ///
 /// When the system Reduce Transparency setting is on, the blur is removed and only the
 /// dimming gradient is shown, at full opacity. Set `dimmingTintColor` to nil to show nothing,
 /// or `replacesBlurWhenReducingTransparency` to false to keep the blur.
+///
 /// When Increase Contrast is on, the dimming gradient is made stronger.
 public class VariableBlurView: UIView {
 
+    // MARK: - Public Properties
+    
     /// The possible directions that the gradient of this blur view may flow in.
     public enum Direction: Hashable, Sendable {
         case down   // Downwards. Useful for the iOS status bar
@@ -142,6 +146,8 @@ public class VariableBlurView: UIView {
         }
     }
 
+    // MARK: - Private Properties
+    
     /// Allows reflection dimming to overflow while clipping only the actual blur backdrop.
     internal var clipsBlurToBounds: Bool {
         get { blurEffectView.clipsToBounds }
@@ -259,6 +265,8 @@ public class VariableBlurView: UIView {
         needsUpdate = false
     }
 
+    // Only needed below iOS 17. Marked deprecated to match the superclass and silence the warning.
+    @available(iOS, deprecated: 17.0, message: "Use the trait change registration APIs declared in the UITraitChangeObservable protocol")
     public override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
         // On iOS 17+, trait changes are handled via registerForTraitChanges in commonInit()
@@ -267,6 +275,7 @@ public class VariableBlurView: UIView {
         }
     }
 
+    // Called if the user changes the 'Reduce Transparency' system accessibility setting while the app is open.
     @objc private func reduceTransparencyStatusDidChange() {
         needsBlurFilterRebuild = true
         setNeedsLayout()

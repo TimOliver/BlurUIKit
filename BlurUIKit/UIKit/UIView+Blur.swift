@@ -26,7 +26,7 @@ import UIKit
 // Applies a gaussian blur to a UIView without blurring the content below it.
 extension UIView {
 
-    /// Set the gaussian blur radius of this view
+    /// Set the gaussian blur radius of this view, cancelling any running blur animation.
     public var blurRadius: CGFloat {
         get {
             guard let filter = blurFilter else { return 0.0 }
@@ -34,6 +34,8 @@ extension UIView {
         }
 
         set {
+            layer.removeAnimation(forKey: blurAnimationKey)
+
             // A filter with no radius still forces offscreen rendering, so remove it entirely.
             guard newValue > 0.0 else {
                 removeBlurFilter()
@@ -43,7 +45,8 @@ extension UIView {
         }
     }
 
-    /// Apply a gaussian blur to this view with an animation
+    /// Apply a gaussian blur to this view with an animation.
+    /// An interrupted blur animation continues from its currently displayed radius.
     /// - Parameters:
     ///   - radius: The blur radius to animate to.
     ///   - duration: How long the animation runs. Defaults to 0.45 seconds.
@@ -54,13 +57,13 @@ extension UIView {
     public func setBlurRadiusAnimated(radius: CGFloat,
                                       duration: TimeInterval = 0.45,
                                       timing: BlurAnimationTiming = .automatic) {
-        let currentRadius = self.blurRadius
+        let currentRadius = inFlightBlurRadius ?? blurRadius
 
         // Keep a filter in place even when clearing the blur, so there is something to animate.
         installBlurFilter(radius: radius)
         let filter = self.blurFilter
 
-        let blurAnimation = CABasicAnimation(keyPath: "filters.gaussianBlur.inputRadius")
+        let blurAnimation = CABasicAnimation(keyPath: blurAnimationKey)
         blurAnimation.fromValue = currentRadius
         blurAnimation.toValue = radius
         blurAnimation.duration = duration
@@ -73,7 +76,7 @@ extension UIView {
             guard let self, radius <= 0.0, self.blurFilter === filter else { return }
             self.removeBlurFilter()
         }
-        self.layer.add(blurAnimation, forKey: "filters.gaussianBlur.inputRadius")
+        self.layer.add(blurAnimation, forKey: blurAnimationKey)
         CATransaction.commit()
     }
 }
@@ -158,10 +161,25 @@ extension CAMediaTimingFunction {
 
 // MARK: - Private
 
+private let blurAnimationKey = "filters.gaussianBlur.inputRadius"
+
 // A global pointer to use as the associated object handle
 @MainActor private var BlurFilterObjectHandle: UInt8 = 0
 
 extension UIView {
+    // Only use presentation values while our blur animation is running. Otherwise the
+    // presentation layer may still contain an earlier, uncommitted model value.
+    private var inFlightBlurRadius: CGFloat? {
+        guard let animation = layer.animation(forKey: blurAnimationKey) else { return nil }
+        let filter = layer.presentation()?.filters?.compactMap { $0 as? NSObject }.first {
+            $0.value(forKey: "name") as? String == "gaussianBlur"
+        }
+        // Before the first transaction commits there may be no presentation filter yet.
+        // In that case, the existing animation is still at its starting radius.
+        return filter?.value(forKey: "inputRadius") as? CGFloat
+            ?? (animation as? CABasicAnimation)?.fromValue as? CGFloat
+    }
+
     // Save the associated filter with this view so it's quicker to fetch on subsequent calls
     private var blurFilter: NSObject? {
         get {

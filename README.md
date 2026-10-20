@@ -116,7 +116,7 @@ Add the following to your `Package.swift`:
 ``` swift
 dependencies: [
   // ...
-  .package(url: "https://github.com/TimOliver/BlurUIKit.git"),
+  .package(url: "https://github.com/TimOliver/BlurUIKit.git", from: "1.6.0"),
 ],
 ```
 

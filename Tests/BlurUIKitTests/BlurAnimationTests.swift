@@ -33,6 +33,94 @@ final class BlurAnimationTests: XCTestCase {
         XCTAssertEqual(controlPoints(of: try XCTUnwrap(animation.timingFunction)), controlPoints(of: .blurEaseIn))
     }
 
+    // MARK: - Interrupted Animations
+
+    @MainActor
+    func testRetargetingBeforePresentationStartsKeepsTheOriginalRadius() throws {
+        let view = UIView(frame: CGRect(x: 0, y: 0, width: 100, height: 100))
+        view.blurRadius = 4
+        view.setBlurRadiusAnimated(radius: 20, duration: 1)
+        XCTAssertNil(view.layer.presentation())
+
+        view.setBlurRadiusAnimated(radius: 0, duration: 1)
+
+        let animation = try XCTUnwrap(view.layer.animation(forKey: animationKey) as? CABasicAnimation)
+        XCTAssertEqual(animation.fromValue as? CGFloat, 4)
+    }
+
+    @MainActor
+    func testRetargetingStartsAtThePresentedRadius() throws {
+        try withAnimatingBlur(from: 0, to: 20) { view, presentedRadius in
+            view.setBlurRadiusAnimated(radius: 0, duration: 1)
+
+            let animation = try XCTUnwrap(view.layer.animation(forKey: animationKey) as? CABasicAnimation)
+            XCTAssertEqual(try XCTUnwrap(animation.fromValue as? CGFloat), presentedRadius, accuracy: 0.5)
+            XCTAssertEqual(view.blurRadius, 0)
+        }
+    }
+
+    @MainActor
+    func testAutomaticTimingUsesThePresentedDirectionWhenRetargeting() throws {
+        try withAnimatingBlur(from: 20, to: 0) { view, presentedRadius in
+            // This target decreases the visible radius, but increases the old model radius of zero.
+            view.setBlurRadiusAnimated(radius: presentedRadius / 2, duration: 1)
+
+            let animation = try XCTUnwrap(view.layer.animation(forKey: animationKey) as? CABasicAnimation)
+            XCTAssertEqual(controlPoints(of: try XCTUnwrap(animation.timingFunction)),
+                           controlPoints(of: .blurEaseOut))
+        }
+    }
+
+    @MainActor
+    func testImmediateRadiusChangeCancelsOnlyTheBlurAnimation() throws {
+        try withAnimatingBlur(from: 0, to: 20) { view, _ in
+            let opacity = CABasicAnimation(keyPath: "opacity")
+            opacity.fromValue = 1
+            opacity.toValue = 0.5
+            opacity.duration = 2
+            view.layer.add(opacity, forKey: "unrelatedOpacity")
+
+            view.blurRadius = 40
+
+            XCTAssertNil(view.layer.animation(forKey: animationKey))
+            XCTAssertNotNil(view.layer.animation(forKey: "unrelatedOpacity"))
+            XCTAssertEqual(view.blurRadius, 40)
+            CATransaction.flush()
+            RunLoop.main.run(until: Date().addingTimeInterval(0.1))
+            XCTAssertEqual(try presentedRadius(of: view), 40, accuracy: 0.5)
+        }
+    }
+
+    @MainActor
+    func testClearingDuringAnimationDoesNotResumeAfterReapplyingBlur() throws {
+        try withAnimatingBlur(from: 0, to: 20) { view, _ in
+            view.blurRadius = 0
+            XCTAssertNil(view.layer.animation(forKey: animationKey))
+            XCTAssertNil(view.layer.filters)
+
+            view.blurRadius = 10
+            CATransaction.flush()
+            RunLoop.main.run(until: Date().addingTimeInterval(0.1))
+
+            XCTAssertNil(view.layer.animation(forKey: animationKey))
+            XCTAssertEqual(try presentedRadius(of: view), 10, accuracy: 0.5)
+        }
+    }
+
+    @MainActor
+    func testInterruptedClearDoesNotRemoveTheReplacementFilter() throws {
+        try withAnimatingBlur(from: 20, to: 0) { view, _ in
+            view.blurRadius = 20
+            let replacement = try XCTUnwrap(view.layer.filters?.first as? NSObject)
+            CATransaction.flush()
+            RunLoop.main.run(until: Date().addingTimeInterval(0.1))
+
+            XCTAssertEqual(view.blurRadius, 20)
+            XCTAssertEqual(view.layer.filters?.count, 1)
+            XCTAssertTrue((view.layer.filters?.first as? NSObject) === replacement)
+        }
+    }
+
     // MARK: - Filter Cleanup
 
     @MainActor
@@ -149,6 +237,37 @@ final class BlurAnimationTests: XCTestCase {
 
     func testTimingIsSendable() {
         requireSendable(BlurAnimationTiming.self)
+    }
+
+    // MARK: - Helpers
+
+    @MainActor
+    private func withAnimatingBlur(from initialRadius: CGFloat,
+                                   to targetRadius: CGFloat,
+                                   _ body: (UIView, CGFloat) throws -> Void) throws {
+        let window = makePinnedWindow()
+        let view = UIView(frame: window.bounds)
+        view.backgroundColor = .red
+        window.addSubview(view)
+        defer {
+            view.layer.removeAllAnimations()
+            window.isHidden = true
+        }
+        view.blurRadius = initialRadius
+        view.setBlurRadiusAnimated(radius: targetRadius, duration: 2, timing: .linear)
+        CATransaction.flush()
+        RunLoop.main.run(until: Date().addingTimeInterval(0.3))
+
+        let radius = try presentedRadius(of: view)
+        XCTAssertGreaterThan(radius, min(initialRadius, targetRadius))
+        XCTAssertLessThan(radius, max(initialRadius, targetRadius))
+        try body(view, radius)
+    }
+
+    @MainActor
+    private func presentedRadius(of view: UIView) throws -> CGFloat {
+        let filter = try XCTUnwrap(view.layer.presentation()?.filters?.first as? NSObject)
+        return try XCTUnwrap(filter.value(forKey: "inputRadius") as? CGFloat)
     }
 
     private func requireSendable<T: Sendable>(_: T.Type) {}
