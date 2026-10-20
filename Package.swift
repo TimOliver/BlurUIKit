@@ -28,7 +28,9 @@ let package = Package(
         .testTarget(
             name: "BlurUIKitTests",
             dependencies: ["BlurUIKit", "BlurSwiftUI"],
-            path: "Tests/BlurUIKitTests"
+            path: "Tests/BlurUIKitTests",
+            // Rendering requires the example app's window scene and render server.
+            exclude: ["ReflectionRenderingTests.swift"]
         ),
     ],
     swiftLanguageModes: [.v6]

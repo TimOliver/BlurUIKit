@@ -60,36 +60,7 @@ final class VariableBlurLayoutTests: XCTestCase {
     }
 
     @MainActor
-    func testBoundsResizeRegeneratesVerticalMask() throws {
-        try withBlur { blur in
-            blur.frame = CGRect(x: 0, y: 0, width: 300, height: 160)
-            blur.layoutIfNeeded()
-            XCTAssertEqual(try blurMask(in: blur).height, 160)
-
-            blur.bounds.size.height = 240
-            blur.layoutIfNeeded()
-            XCTAssertEqual(try blurMask(in: blur).height, 240)
-        }
-    }
-
-    @MainActor
-    func testBoundsResizeRegeneratesHorizontalMask() throws {
-        try withBlur { blur in
-            blur.direction = .right
-            blur.frame = CGRect(x: 0, y: 0, width: 160, height: 300)
-            blur.layoutIfNeeded()
-            XCTAssertEqual(try blurMask(in: blur).width, 160)
-
-            blur.bounds.size.width = 240
-            blur.layoutIfNeeded()
-            let mask = try blurMask(in: blur)
-            XCTAssertEqual(mask.width, 240)
-            XCTAssertEqual(mask.height, 1)
-        }
-    }
-
-    @MainActor
-    func testZeroWidthLayoutKeepsMaskGenerationPending() throws {
+    func testVerticalMaskRecoversFromZeroWidthAndTracksResizing() throws {
         try withBlur { blur in
             blur.bounds.size = CGSize(width: 0, height: 160)
             blur.layoutIfNeeded()
@@ -97,12 +68,16 @@ final class VariableBlurLayoutTests: XCTestCase {
             // Only the dimension perpendicular to the gradient changes here.
             blur.bounds.size.width = 300
             blur.layoutIfNeeded()
-            XCTAssertEqual(try blurMask(in: blur).height, 160)
+            XCTAssertEqual(try blurMask(in: blur).height, 160, "Recovering from zero width")
+
+            blur.bounds.size.height = 240
+            blur.layoutIfNeeded()
+            XCTAssertEqual(try blurMask(in: blur).height, 240, "Resizing along the gradient")
         }
     }
 
     @MainActor
-    func testZeroHeightLayoutKeepsHorizontalMaskGenerationPending() throws {
+    func testHorizontalMaskRecoversFromZeroHeightAndTracksResizing() throws {
         try withBlur { blur in
             blur.direction = .right
             blur.bounds.size = CGSize(width: 160, height: 0)
@@ -110,7 +85,13 @@ final class VariableBlurLayoutTests: XCTestCase {
 
             blur.bounds.size.height = 300
             blur.layoutIfNeeded()
-            XCTAssertEqual(try blurMask(in: blur).width, 160)
+            XCTAssertEqual(try blurMask(in: blur).width, 160, "Recovering from zero height")
+
+            blur.bounds.size.width = 240
+            blur.layoutIfNeeded()
+            let mask = try blurMask(in: blur)
+            XCTAssertEqual(mask.width, 240, "Resizing along the gradient")
+            XCTAssertEqual(mask.height, 1)
         }
     }
 

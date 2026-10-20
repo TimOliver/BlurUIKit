@@ -11,19 +11,13 @@ final class BlurFilterReuseTests: XCTestCase {
     // MARK: - Reuse
 
     @MainActor
-    func testPlainLayoutPassKeepsTheInstalledFilter() throws {
+    func testPlainAndCrossAxisLayoutsKeepTheInstalledFilter() throws {
         try withBlur { blur, _ in
             let installed = try filter(in: blur)
             blur.setNeedsLayout()
             blur.layoutIfNeeded()
             XCTAssertTrue(try filter(in: blur) === installed)
-        }
-    }
 
-    @MainActor
-    func testResizingAcrossTheGradientKeepsTheInstalledFilter() throws {
-        try withBlur { blur, _ in
-            let installed = try filter(in: blur)
             // The gradient runs vertically, so a width change doesn't affect the mask
             blur.frame.size.width = 200
             blur.layoutIfNeeded()
@@ -34,7 +28,7 @@ final class BlurFilterReuseTests: XCTestCase {
     // MARK: - Rebuilds
 
     @MainActor
-    func testChangingTheRadiusInstallsANewFilter() throws {
+    func testRadiusAndAlongAxisSizeChangesInstallNewFilters() throws {
         try withBlur { blur, _ in
             let installed = try filter(in: blur)
             blur.maximumBlurRadius = 20
@@ -42,21 +36,15 @@ final class BlurFilterReuseTests: XCTestCase {
             let rebuilt = try filter(in: blur)
             XCTAssertFalse(rebuilt === installed)
             XCTAssertEqual(rebuilt.value(forKey: "inputRadius") as? CGFloat, 20)
-        }
-    }
 
-    @MainActor
-    func testResizingAlongTheGradientInstallsANewFilter() throws {
-        try withBlur { blur, _ in
-            let installed = try filter(in: blur)
             blur.frame.size.height = 150
             blur.layoutIfNeeded()
-            XCTAssertFalse(try filter(in: blur) === installed)
+            XCTAssertFalse(try filter(in: blur) === rebuilt)
         }
     }
 
     @MainActor
-    func testFilterIsReinstalledIfUIKitReplacesIt() throws {
+    func testFilterIsReinstalledAfterUIKitReplacementAndWindowChanges() throws {
         try withBlur { blur, _ in
             let backdrop = try backdropView(in: blur)
             let installed = try filter(in: blur)
@@ -67,18 +55,12 @@ final class BlurFilterReuseTests: XCTestCase {
             let reinstalled = try filter(in: blur)
             XCTAssertFalse(reinstalled === installed)
             XCTAssertEqual(reinstalled.value(forKey: "name") as? String, "variableBlur")
-        }
-    }
 
-    @MainActor
-    func testMovingToAnotherWindowInstallsANewFilter() throws {
-        try withBlur { blur, _ in
-            let installed = try filter(in: blur)
             let otherWindow = makePinnedWindow()
             defer { otherWindow.isHidden = true }
             otherWindow.addSubview(blur)
             blur.layoutIfNeeded()
-            XCTAssertFalse(try filter(in: blur) === installed)
+            XCTAssertFalse(try filter(in: blur) === reinstalled)
             withExtendedLifetime(otherWindow) {}
         }
     }

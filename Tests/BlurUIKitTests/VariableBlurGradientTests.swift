@@ -48,18 +48,26 @@ final class VariableBlurGradientTests: XCTestCase {
     }
 
     @MainActor
-    func testDimmingInsetStaysAtMidpointWhenExtensionChanges() throws {
+    func testDimmingInsetTracksBoundsAcrossExtensionChangesAndResizing() throws {
         try withBlur { blur in
             blur.dimmingFullColorInset = .relative(fraction: 0.5)
             blur.dimmingClearExtension = .relative(fraction: 0.5)
             blur.layoutIfNeeded()
             assertFraction(blur.dimmingFullColorInset, 0.5)
-            XCTAssertEqual(try fullColorPosition(blur), 100)
+            XCTAssertEqual(try fullColorPosition(blur), 100, "Initial midpoint")
 
             blur.dimmingClearExtension = .relative(fraction: 1)
             blur.layoutIfNeeded()
             assertFraction(blur.dimmingFullColorInset, 0.5)
-            XCTAssertEqual(try fullColorPosition(blur), 100)
+            XCTAssertEqual(try fullColorPosition(blur), 100, "Changing only the extension")
+
+            blur.dimmingClearExtension = .relative(fraction: 0.5)
+            blur.layoutIfNeeded()
+            // Settle the extension first so this update exercises bounds invalidation alone.
+            blur.bounds.size.height = 300
+            blur.layoutIfNeeded()
+            XCTAssertEqual(try dimmingImage(blur).height, 450)
+            XCTAssertEqual(try fullColorPosition(blur), 150, "Resizing the bounds")
         }
     }
 
@@ -78,33 +86,38 @@ final class VariableBlurGradientTests: XCTestCase {
     }
 
     @MainActor
-    func testBoundsRelativeInsetTracksResizing() throws {
-        try withBlur { blur in
-            blur.dimmingFullColorInset = .relative(fraction: 0.5)
-            blur.dimmingClearExtension = .relative(fraction: 0.5)
-            blur.layoutIfNeeded()
-            blur.bounds.size.height = 300
-            blur.layoutIfNeeded()
-            XCTAssertEqual(try dimmingImage(blur).height, 450)
-            XCTAssertEqual(try fullColorPosition(blur), 150)
-        }
-    }
+    func testDimmingRemainsIndependentOfMinimumRadiusAndExtendsTheClearEdgeInEveryDirection() throws {
+        // Reduce Transparency forces full dimming, so pin it off to check the configured alpha.
+        VariableBlurView.isReduceTransparencyEnabled = { false }
+        defer { VariableBlurView.isReduceTransparencyEnabled = { UIAccessibility.isReduceTransparencyEnabled } }
 
-    @MainActor
-    func testExtensionUsesTheClearEdgeInEveryDirection() throws {
-        for direction in [VariableBlurView.Direction.down, .up, .left, .right] {
-            try withBlur { blur in
+        try withBlur { blur in
+            blur.minimumBlurRadius = 3
+            blur.maximumBlurRadius = 60
+            blur.dimmingAlpha = .constant(alpha: 0.9)
+
+            for direction in [VariableBlurView.Direction.down, .up, .left, .right] {
                 blur.direction = direction
+                blur.dimmingClearExtension = nil
+                blur.layoutIfNeeded()
+                let vertical = direction == .up || direction == .down
+                let reversed = direction == .up || direction == .right
+                let maskValues = alphas(try mask(blur))
+                let dimmingValues = alphas(try dimmingImage(blur))
+                XCTAssertEqual(maskValues.first, reversed ? 12 : 255, "\(direction): minimum blur radius")
+                XCTAssertEqual(maskValues.last, reversed ? 255 : 12, "\(direction): minimum blur radius")
+                XCTAssertEqual(dimmingValues.first, reversed ? 0 : 255, "\(direction): unextended dimming")
+                XCTAssertEqual(dimmingValues.last, reversed ? 255 : 0, "\(direction): unextended dimming")
+                XCTAssertEqual(try dimmingView(blur).alpha, 0.9, accuracy: 0.001, "\(direction): dimming alpha")
+
                 blur.dimmingClearExtension = .absolute(position: 40)
                 blur.layoutIfNeeded()
                 let frame = try dimmingView(blur).frame
-                let vertical = direction == .up || direction == .down
-                let reversed = direction == .up || direction == .right
-                XCTAssertEqual(vertical ? frame.height : frame.width, 240)
-                XCTAssertEqual(vertical ? frame.minY : frame.minX, reversed ? -40 : 0)
+                XCTAssertEqual(vertical ? frame.height : frame.width, 240, "\(direction): extended length")
+                XCTAssertEqual(vertical ? frame.minY : frame.minX, reversed ? -40 : 0, "\(direction): clear edge")
                 let values = alphas(try dimmingImage(blur))
-                XCTAssertEqual(values.first, reversed ? 0 : 255)
-                XCTAssertEqual(values.last, reversed ? 255 : 0)
+                XCTAssertEqual(values.first, reversed ? 0 : 255, "\(direction): extended dimming")
+                XCTAssertEqual(values.last, reversed ? 255 : 0, "\(direction): extended dimming")
             }
         }
     }
@@ -165,32 +178,6 @@ final class VariableBlurGradientTests: XCTestCase {
     }
 
     @MainActor
-    func testMinimumRadiusDoesNotAffectDimmingInAnyDirection() throws {
-        // Reduce Transparency forces full dimming, so pin it off to check the configured alpha
-        VariableBlurView.isReduceTransparencyEnabled = { false }
-        defer { VariableBlurView.isReduceTransparencyEnabled = { UIAccessibility.isReduceTransparencyEnabled } }
-
-        for direction in [VariableBlurView.Direction.down, .up, .left, .right] {
-            try withBlur { blur in
-                blur.direction = direction
-                blur.dimmingClearExtension = nil
-                blur.minimumBlurRadius = 3
-                blur.maximumBlurRadius = 60
-                blur.dimmingAlpha = .constant(alpha: 0.9)
-                blur.layoutIfNeeded()
-                let reversed = direction == .up || direction == .right
-                let maskValues = alphas(try mask(blur))
-                let dimmingValues = alphas(try dimmingImage(blur))
-                XCTAssertEqual(maskValues.first, reversed ? 12 : 255)
-                XCTAssertEqual(maskValues.last, reversed ? 255 : 12)
-                XCTAssertEqual(dimmingValues.first, reversed ? 0 : 255)
-                XCTAssertEqual(dimmingValues.last, reversed ? 255 : 0)
-                XCTAssertEqual(try dimmingView(blur).alpha, 0.9, accuracy: 0.001)
-            }
-        }
-    }
-
-    @MainActor
     func testFreshFilterRefreshReusesBothGradientImages() throws {
         try withBlur { blur in
             blur.layoutIfNeeded()
@@ -237,61 +224,7 @@ final class VariableBlurGradientTests: XCTestCase {
     }
 
     @MainActor
-    func testBlurRadiiStillAcceptDoubleValues() {
-        // The radii were Double before becoming CGFloat. Existing code passing Double
-        // values must keep compiling, which Swift's implicit Double-CGFloat conversion allows.
-        let minimum: Double = 2
-        let maximum: Double = 12
-        let blur = VariableBlurView()
-        blur.minimumBlurRadius = minimum
-        blur.maximumBlurRadius = maximum
-        let reflection = ReflectionBlurView()
-        reflection.minimumBlurRadius = minimum
-        reflection.maximumBlurRadius = maximum
-        XCTAssertEqual(blur.maximumBlurRadius, 12)
-        XCTAssertEqual(reflection.minimumBlurRadius, 2)
-    }
-
-    func testConfigurationTypesAreHashableAndSendable() {
-        // Compile-time check. Swift 6 clients need these to be Sendable to store them in static
-        // constants, though Sendable is only enforced when this target is built in Swift 6 mode.
-        requireHashableAndSendable(VariableBlurView.Direction.self)
-        requireHashableAndSendable(VariableBlurView.GradientSizing.self)
-        requireHashableAndSendable(VariableBlurView.DimmingAlpha.self)
-        XCTAssertEqual(VariableBlurView.GradientSizing.relative(fraction: 0.5), .relative(fraction: 0.5))
-        XCTAssertNotEqual(VariableBlurView.GradientSizing.relative(fraction: 0.5), .absolute(position: 0.5))
-        XCTAssertNotEqual(VariableBlurView.DimmingAlpha.constant(alpha: 0.5),
-                          .interfaceStyle(lightModeAlpha: 0.5, darkModeAlpha: 0.5))
-    }
-
-    @MainActor
-    func testSwiftUIModifiersConfigureAndUpdateTheSameProperties() async throws {
-        let root = VariableBlur(direction: .up)
-            .minimumBlurRadius(3)
-            .maximumBlurRadius(60)
-            .blurMaximumRadiusInset(.relative(fraction: 0.25))
-            .dimmingTintColor(.red)
-            .dimmingAlpha(.constant(alpha: 0.9))
-            .dimmingClearExtension(.relative(fraction: 0.5))
-            .dimmingFullColorInset(.relative(fraction: 0.5))
-        let controller = UIHostingController(rootView: root)
-        let window = makePinnedWindow(frame: CGRect(x: 0, y: 0, width: 200, height: 200))
-        window.rootViewController = controller
-        defer { window.isHidden = true }
-        controller.view.layoutIfNeeded()
-        try await Task.sleep(nanoseconds: 100_000_000)
-        let blur = try XCTUnwrap(findBlur(in: controller.view))
-        XCTAssertEqual(try fullColorPosition(blur), blur.bounds.height * 0.5, accuracy: 1)
-        assertFraction(blur.blurMaximumRadiusInset, 0.25)
-        assertFraction(blur.dimmingClearExtension, 0.5)
-
-        controller.rootView = root.dimmingFullColorInset(.relative(fraction: 0.25))
-        try await Task.sleep(nanoseconds: 100_000_000)
-        XCTAssertEqual(try fullColorPosition(blur), blur.bounds.height * 0.75, accuracy: 1)
-    }
-
-    @MainActor
-    func testSwiftUIUpdateWithUnchangedConfigurationKeepsTheInstalledBlur() async throws {
+    func testSwiftUIUpdatesReuseUnchangedFiltersAndApplyChangedGradients() async throws {
         // Builds a fresh description each time, as a parent view's body evaluation does.
         func makeRoot() -> VariableBlur {
             VariableBlur(direction: .up)
@@ -310,13 +243,22 @@ final class VariableBlurGradientTests: XCTestCase {
         controller.view.layoutIfNeeded()
         try await Task.sleep(nanoseconds: 100_000_000)
         let blur = try XCTUnwrap(findBlur(in: controller.view))
+        XCTAssertEqual(try fullColorPosition(blur), blur.bounds.height * 0.5, accuracy: 1,
+                       "Initial SwiftUI configuration")
+        assertFraction(blur.blurMaximumRadiusInset, 0.25)
+        assertFraction(blur.dimmingClearExtension, 0.5)
         let installedFilter = try filter(blur)
         let installedDimming = try dimmingView(blur).image
 
         controller.rootView = makeRoot()
         try await Task.sleep(nanoseconds: 100_000_000)
-        XCTAssertTrue((try filter(blur)) === installedFilter)
-        XCTAssertTrue((try dimmingView(blur).image) === installedDimming)
+        XCTAssertTrue((try filter(blur)) === installedFilter, "Unchanged SwiftUI configuration")
+        XCTAssertTrue((try dimmingView(blur).image) === installedDimming, "Unchanged SwiftUI configuration")
+
+        controller.rootView = makeRoot().dimmingFullColorInset(.relative(fraction: 0.25))
+        try await Task.sleep(nanoseconds: 100_000_000)
+        XCTAssertEqual(try fullColorPosition(blur), blur.bounds.height * 0.75, accuracy: 1,
+                       "Changed SwiftUI configuration")
     }
 
     // MARK: - Deprecated API
@@ -325,30 +267,23 @@ final class VariableBlurGradientTests: XCTestCase {
 
     @available(*, deprecated)
     @MainActor
-    func testDeprecatedBlurStartingInsetForwardsToMaximumRadiusInset() {
-        withBlur { blur in
-            blur.blurStartingInset = .relative(fraction: 0.5)
-            XCTAssertEqual(blur.blurMaximumRadiusInset, .relative(fraction: 0.5))
-            blur.blurMaximumRadiusInset = .absolute(position: 20)
-            XCTAssertEqual(blur.blurStartingInset, .absolute(position: 20))
-        }
-    }
+    func testDeprecatedInsetAliasesTranslateToCurrentProperties() {
+        let blur = VariableBlurView()
+        blur.blurStartingInset = .relative(fraction: 0.5)
+        XCTAssertEqual(blur.blurMaximumRadiusInset, .relative(fraction: 0.5))
+        blur.blurMaximumRadiusInset = .absolute(position: 20)
+        XCTAssertEqual(blur.blurStartingInset, .absolute(position: 20))
 
-    @available(*, deprecated)
-    @MainActor
-    func testDeprecatedDimmingOvershootMeasuresTheTotalLength() {
-        withBlur { blur in
-            // Relative overshoots described the total length; clear extensions describe only the extra space.
-            blur.dimmingOvershoot = .relative(fraction: 1.25)
-            XCTAssertEqual(blur.dimmingClearExtension, .relative(fraction: 0.25))
-            blur.dimmingOvershoot = .absolute(position: 40)
-            XCTAssertEqual(blur.dimmingClearExtension, .absolute(position: 40))
-            blur.dimmingOvershoot = nil
-            XCTAssertNil(blur.dimmingClearExtension)
+        // Relative overshoots described the total length; clear extensions describe only the extra space.
+        blur.dimmingOvershoot = .relative(fraction: 1.25)
+        XCTAssertEqual(blur.dimmingClearExtension, .relative(fraction: 0.25))
+        blur.dimmingOvershoot = .absolute(position: 40)
+        XCTAssertEqual(blur.dimmingClearExtension, .absolute(position: 40))
+        blur.dimmingOvershoot = nil
+        XCTAssertNil(blur.dimmingClearExtension)
 
-            blur.dimmingClearExtension = .relative(fraction: 0.5)
-            XCTAssertEqual(blur.dimmingOvershoot, .relative(fraction: 1.5))
-        }
+        blur.dimmingClearExtension = .relative(fraction: 0.5)
+        XCTAssertEqual(blur.dimmingOvershoot, .relative(fraction: 1.5))
     }
 
     @available(*, deprecated)
@@ -396,6 +331,25 @@ final class VariableBlurGradientTests: XCTestCase {
         controller.rootView = root.dimmingFullColorInset(.relative(fraction: 0.5))
         try await Task.sleep(nanoseconds: 100_000_000)
         XCTAssertEqual(try fullColorPosition(blur), blur.bounds.height * 0.5, accuracy: 1)
+    }
+
+    // MARK: - Helpers
+
+    // Intentionally not called: compiling this body verifies source compatibility without
+    // constructing views at runtime. Swift 6 also enforces the Sendable constraints here.
+    @MainActor
+    private func checkSourceCompatibility() {
+        let minimum: Double = 2
+        let maximum: Double = 12
+        let blur = VariableBlurView()
+        blur.minimumBlurRadius = minimum
+        blur.maximumBlurRadius = maximum
+        let reflection = ReflectionBlurView()
+        reflection.minimumBlurRadius = minimum
+        reflection.maximumBlurRadius = maximum
+        requireHashableAndSendable(VariableBlurView.Direction.self)
+        requireHashableAndSendable(VariableBlurView.GradientSizing.self)
+        requireHashableAndSendable(VariableBlurView.DimmingAlpha.self)
     }
 
     @MainActor

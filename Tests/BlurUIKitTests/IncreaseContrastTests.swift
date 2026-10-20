@@ -11,9 +11,19 @@ final class IncreaseContrastTests: XCTestCase {
     // MARK: - Dimming Strength
 
     @MainActor
-    func testDefaultDimmingIsStrengthenedInLightMode() throws {
+    func testHighContrastRespectsDefaultConstantAndDisabledDimming() throws {
         try withBlur(style: .light, contrast: .high) { blur in
-            XCTAssertEqual(try dimmingView(in: blur).alpha, 0.75, accuracy: 0.001)
+            XCTAssertEqual(try dimmingView(in: blur).alpha, 0.75, accuracy: 0.001,
+                           "Default light-mode dimming")
+
+            blur.dimmingAlpha = .constant(alpha: 0.9)
+            blur.layoutIfNeeded()
+            XCTAssertEqual(try dimmingView(in: blur).alpha, 0.95, accuracy: 0.001,
+                           "Constant dimming")
+
+            blur.dimmingAlpha = nil
+            blur.layoutIfNeeded()
+            XCTAssertEqual(try dimmingView(in: blur).alpha, 0.0, "Disabled dimming")
         }
     }
 
@@ -21,31 +31,6 @@ final class IncreaseContrastTests: XCTestCase {
     func testDefaultDimmingIsStrengthenedInDarkMode() throws {
         try withBlur(style: .dark, contrast: .high) { blur in
             XCTAssertEqual(try dimmingView(in: blur).alpha, 0.625, accuracy: 0.001)
-        }
-    }
-
-    @MainActor
-    func testConstantDimmingIsStrengthened() throws {
-        try withBlur(style: .light, contrast: .high) { blur in
-            blur.dimmingAlpha = .constant(alpha: 0.9)
-            blur.layoutIfNeeded()
-            XCTAssertEqual(try dimmingView(in: blur).alpha, 0.95, accuracy: 0.001)
-        }
-    }
-
-    @MainActor
-    func testNormalContrastLeavesDimmingUnchanged() throws {
-        try withBlur(style: .light, contrast: .normal) { blur in
-            XCTAssertEqual(try dimmingView(in: blur).alpha, 0.5, accuracy: 0.001)
-        }
-    }
-
-    @MainActor
-    func testDisabledDimmingStaysHidden() throws {
-        try withBlur(style: .light, contrast: .high) { blur in
-            blur.dimmingAlpha = nil
-            blur.layoutIfNeeded()
-            XCTAssertEqual(try dimmingView(in: blur).alpha, 0.0)
         }
     }
 

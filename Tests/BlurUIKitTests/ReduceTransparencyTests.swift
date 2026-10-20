@@ -22,37 +22,6 @@ final class ReduceTransparencyTests: XCTestCase {
     // MARK: - Fallback
 
     @MainActor
-    func testBlurIsShownWhenReduceTransparencyIsOff() throws {
-        stubReduceTransparency { false }
-
-        try withBlur { blur in
-            XCTAssertFalse(try effectView(in: blur).isHidden)
-            XCTAssertEqual(try dimmingView(in: blur).alpha, 0.5)
-        }
-    }
-
-    @MainActor
-    func testBlurIsReplacedByFullDimmingWhenReduceTransparencyIsOn() throws {
-        stubReduceTransparency { true }
-
-        try withBlur { blur in
-            XCTAssertTrue(try effectView(in: blur).isHidden)
-            XCTAssertEqual(try dimmingView(in: blur).alpha, 1.0)
-        }
-    }
-
-    @MainActor
-    func testDisabledDimmingStaysHiddenWhenReduceTransparencyIsOn() throws {
-        stubReduceTransparency { true }
-
-        try withBlur { blur in
-            blur.dimmingAlpha = nil
-            blur.layoutIfNeeded()
-            XCTAssertEqual(try dimmingView(in: blur).alpha, 0.0)
-        }
-    }
-
-    @MainActor
     func testReflectionKeepsItsBlurWhenReduceTransparencyIsOn() throws {
         stubReduceTransparency { true }
 
@@ -67,19 +36,26 @@ final class ReduceTransparencyTests: XCTestCase {
     // MARK: - Opting Out
 
     @MainActor
-    func testOptingOutKeepsTheBlurWhenReduceTransparencyIsOn() throws {
+    func testFallbackRespectsOptingOutAndDisabledDimming() throws {
         stubReduceTransparency { true }
 
         try withBlur { blur in
+            XCTAssertTrue(try effectView(in: blur).isHidden, "Initial fallback")
+            XCTAssertEqual(try dimmingView(in: blur).alpha, 1.0, "Initial fallback")
+
             blur.replacesBlurWhenReducingTransparency = false
             blur.layoutIfNeeded()
-            XCTAssertFalse(try effectView(in: blur).isHidden)
-            XCTAssertEqual(try dimmingView(in: blur).alpha, 0.5)
+            XCTAssertFalse(try effectView(in: blur).isHidden, "Opting out")
+            XCTAssertEqual(try dimmingView(in: blur).alpha, 0.5, "Opting out")
 
             blur.replacesBlurWhenReducingTransparency = true
             blur.layoutIfNeeded()
-            XCTAssertTrue(try effectView(in: blur).isHidden)
-            XCTAssertEqual(try dimmingView(in: blur).alpha, 1.0)
+            XCTAssertTrue(try effectView(in: blur).isHidden, "Restoring the fallback")
+            XCTAssertEqual(try dimmingView(in: blur).alpha, 1.0, "Restoring the fallback")
+
+            blur.dimmingAlpha = nil
+            blur.layoutIfNeeded()
+            XCTAssertEqual(try dimmingView(in: blur).alpha, 0.0, "Disabled dimming")
         }
     }
 
@@ -114,6 +90,7 @@ final class ReduceTransparencyTests: XCTestCase {
 
         try withBlur { blur in
             XCTAssertFalse(try effectView(in: blur).isHidden)
+            XCTAssertEqual(try dimmingView(in: blur).alpha, 0.5, "Initial normal state")
 
             isEnabled = true
             NotificationCenter.default.post(name: UIAccessibility.reduceTransparencyStatusDidChangeNotification, object: nil)

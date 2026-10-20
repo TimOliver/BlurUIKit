@@ -8,22 +8,34 @@ import UIKit
 
 final class ReflectionBlurViewTests: XCTestCase {
     @MainActor
-    func testSourceControlReceivesHitsAndReflectionPassesThrough() {
+    func testSourceControlsRemainInteractiveWhenReflectionVisibilityChanges() {
         let hierarchy = makeHierarchy()
-
-        XCTAssertTrue(hit(CGPoint(x: 150, y: 100), in: hierarchy) === hierarchy.source)
-        XCTAssertTrue(hit(CGPoint(x: 150, y: 300), in: hierarchy) === hierarchy.underlying)
-        XCTAssertTrue(hit(CGPoint(x: 150, y: 199), in: hierarchy) === hierarchy.source)
-        XCTAssertTrue(hit(CGPoint(x: 150, y: 201), in: hierarchy) === hierarchy.underlying)
-
         let button = UIButton(frame: CGRect(x: 50, y: 50, width: 100, height: 50))
         hierarchy.source.addSubview(button)
-        XCTAssertTrue(hit(CGPoint(x: 75, y: 75), in: hierarchy) === button)
-        XCTAssertTrue(hit(CGPoint(x: 75, y: 325), in: hierarchy) === hierarchy.underlying)
+
+        for isHidden in [false, true, false] {
+            hierarchy.reflection.isReflectionHidden = isHidden
+            hierarchy.reflection.layoutIfNeeded()
+            let state = isHidden ? "hidden" : "visible"
+
+            XCTAssertFalse(hierarchy.source.isHidden, "Source visibility with reflection \(state)")
+            XCTAssertTrue(hit(CGPoint(x: 150, y: 100), in: hierarchy) === hierarchy.source,
+                          "Source hit with reflection \(state)")
+            XCTAssertTrue(hit(CGPoint(x: 150, y: 300), in: hierarchy) === hierarchy.underlying,
+                          "Reflection passthrough with reflection \(state)")
+            XCTAssertTrue(hit(CGPoint(x: 150, y: 199), in: hierarchy) === hierarchy.source,
+                          "Source side of seam with reflection \(state)")
+            XCTAssertTrue(hit(CGPoint(x: 150, y: 201), in: hierarchy) === hierarchy.underlying,
+                          "Reflected side of seam with reflection \(state)")
+            XCTAssertTrue(hit(CGPoint(x: 75, y: 75), in: hierarchy) === button,
+                          "Nested button hit with reflection \(state)")
+            XCTAssertTrue(hit(CGPoint(x: 75, y: 325), in: hierarchy) === hierarchy.underlying,
+                          "Mirrored button passthrough with reflection \(state)")
+        }
     }
 
     @MainActor
-    func testHitRegionsFollowResizing() {
+    func testHitRegionsFollowResizingAndBoundsOrigin() {
         let hierarchy = makeHierarchy()
         let point = CGPoint(x: 150, y: 250)
         XCTAssertTrue(hit(point, in: hierarchy) === hierarchy.underlying)
@@ -41,11 +53,7 @@ final class ReflectionBlurViewTests: XCTestCase {
         XCTAssertEqual(hierarchy.source.bounds.size, CGSize(width: 300, height: 200))
         XCTAssertTrue(hit(point, in: hierarchy) === hierarchy.underlying)
         XCTAssertTrue(hit(CGPoint(x: 150, y: 100), in: hierarchy) === hierarchy.source)
-    }
 
-    @MainActor
-    func testHitRegionsFollowNonzeroBoundsOrigin() {
-        let hierarchy = makeHierarchy()
         hierarchy.reflection.bounds.origin = CGPoint(x: 37, y: 29)
         hierarchy.reflection.layoutIfNeeded()
         let bounds = hierarchy.reflection.bounds
@@ -57,9 +65,21 @@ final class ReflectionBlurViewTests: XCTestCase {
     }
 
     @MainActor
-    func testReplacingContentDetachesOldViewAndResizesReplacement() {
-        let hierarchy = makeHierarchy()
+    func testContentReassignmentAndReplacementPreserveTheExpectedAttachments() {
+        let source = AttachmentTrackingControl()
+        let hierarchy = makeHierarchy(source: source)
         let originalFrame = hierarchy.reflection.frame
+        let originalParent = source.superview
+        let originalMoveCount = source.superviewMoveCount
+        let currentContent = hierarchy.reflection.contentView
+
+        hierarchy.reflection.contentView = currentContent
+        hierarchy.reflection.layoutIfNeeded()
+
+        XCTAssertTrue(source.superview === originalParent, "Same content must keep its parent")
+        XCTAssertEqual(source.superviewMoveCount, originalMoveCount, "Same content must not detach and reattach")
+        XCTAssertTrue(hit(CGPoint(x: 150, y: 100), in: hierarchy) === source)
+
         let formerParent = UIView()
         let replacement = UIControl(frame: CGRect(x: 12, y: 34, width: 50, height: 60))
         formerParent.addSubview(replacement)
@@ -74,36 +94,6 @@ final class ReflectionBlurViewTests: XCTestCase {
         XCTAssertEqual(replacement.bounds.size, CGSize(width: 300, height: 200))
         XCTAssertTrue(hit(CGPoint(x: 150, y: 100), in: hierarchy) === replacement)
         XCTAssertTrue(hit(CGPoint(x: 150, y: 300), in: hierarchy) === hierarchy.underlying)
-    }
-
-    @MainActor
-    func testReassigningTheSameContentKeepsItsAttachment() {
-        let source = AttachmentTrackingControl()
-        let hierarchy = makeHierarchy(source: source)
-        let originalParent = source.superview
-        let originalMoveCount = source.superviewMoveCount
-        let currentContent = hierarchy.reflection.contentView
-
-        hierarchy.reflection.contentView = currentContent
-        hierarchy.reflection.layoutIfNeeded()
-
-        XCTAssertTrue(source.superview === originalParent)
-        XCTAssertEqual(source.superviewMoveCount, originalMoveCount)
-        XCTAssertTrue(hit(CGPoint(x: 150, y: 100), in: hierarchy) === source)
-    }
-
-    @MainActor
-    func testHidingAndShowingReflectionKeepsSourceInteractive() {
-        let hierarchy = makeHierarchy()
-
-        for isHidden in [true, false, true] {
-            hierarchy.reflection.isReflectionHidden = isHidden
-            hierarchy.reflection.layoutIfNeeded()
-
-            XCTAssertFalse(hierarchy.source.isHidden)
-            XCTAssertTrue(hit(CGPoint(x: 150, y: 100), in: hierarchy) === hierarchy.source)
-            XCTAssertTrue(hit(CGPoint(x: 150, y: 300), in: hierarchy) === hierarchy.underlying)
-        }
     }
 
     // MARK: - Helpers

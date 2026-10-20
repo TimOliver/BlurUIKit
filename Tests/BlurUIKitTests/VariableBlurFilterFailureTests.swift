@@ -8,34 +8,6 @@ import UIKit
 
 final class VariableBlurFilterFailureTests: XCTestCase {
     @MainActor
-    func testInitialFailureKeepsSystemMaterialAndRecoversOnLaterLayout() throws {
-        let provider = BlurFilterProvider.shared
-        BlurFilterProvider.shared = BlurFilterProvider(discover: { nil })
-        defer { BlurFilterProvider.shared = provider }
-
-        let window = makePinnedWindow()
-        defer { window.isHidden = true }
-        let blur = VariableBlurView(frame: CGRect(x: 0, y: 0, width: 280, height: 200))
-        blur.dimmingTintColor = nil
-        let effect = try effectView(in: blur)
-        let backdrop = try XCTUnwrap(BlurFilterProvider.findSubview(in: effect, containing: "backdrop"))
-        let originalFilters = try XCTUnwrap(backdrop.layer.filters as? [NSObject])
-        XCTAssertFalse(originalFilters.isEmpty)
-        window.addSubview(blur)
-        blur.layoutIfNeeded()
-
-        XCTAssertFalse(try overlay(in: effect).isHidden, "Keep UIKit's material tint when custom blur is unavailable")
-        assertFilters(originalFilters, on: backdrop)
-
-        BlurFilterProvider.shared = provider
-        blur.setNeedsLayout()
-        blur.layoutIfNeeded()
-
-        XCTAssertEqual(try filter(on: backdrop).value(forKey: "name") as? String, "variableBlur")
-        XCTAssertTrue(try overlay(in: effect).isHidden)
-    }
-
-    @MainActor
     func testFailedReplacementPreservesCustomBlurAndRetriesPendingRadius() throws {
         let provider = BlurFilterProvider.shared
         defer { BlurFilterProvider.shared = provider }

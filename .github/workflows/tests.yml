@@ -51,9 +51,11 @@ jobs:
 
       # xcodebuild prefers the Xcode project over Package.swift when both are present,
       # so remove it from this checkout to also verify the separate package modules.
-      - name: Verify the Swift package tests
+      # Compile the shared tests against those modules without executing them a second time.
+      - name: Build the Swift package tests
         run: |
           rm -rf BlurUIKit.xcodeproj
-          xcodebuild test \
+          xcodebuild build-for-testing \
             -scheme BlurUIKit-Package \
-            -destination "id=$SIMULATOR_UDID"
+            -destination "id=$SIMULATOR_UDID" \
+            CODE_SIGNING_ALLOWED=NO

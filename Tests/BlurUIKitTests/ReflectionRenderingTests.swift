@@ -68,22 +68,7 @@ final class ReflectionRenderingTests: XCTestCase {
     }
 
     @MainActor
-    func testReplacingContentUpdatesTheBlurredReflection() async throws {
-        let host = try makeHost(blurRadius: 20)
-        defer { host.close() }
-        host.reflection.contentView.backgroundColor = .red
-        var snapshot = try await capture(host, name: "replacement-red")
-        assertSolid(.red, snapshot: snapshot, reflection: host.reflection)
-
-        let replacement = UIView()
-        replacement.backgroundColor = .blue
-        host.reflection.contentView = replacement
-        snapshot = try await capture(host, name: "replacement-blue")
-        assertSolid(.blue, snapshot: snapshot, reflection: host.reflection)
-    }
-
-    @MainActor
-    func testScrollingRefreshesTheBlurredReflection() async throws {
+    func testScrollingReplacementAndVisibilityRefreshTheBlurredReflection() async throws {
         let host = try makeHost(blurRadius: 20)
         defer { host.close() }
         let scrollView = UIScrollView()
@@ -96,31 +81,28 @@ final class ReflectionRenderingTests: XCTestCase {
             scrollView.addSubview(page)
         }
         host.reflection.contentView = scrollView
-        var snapshot = try await capture(host, name: "scroll-red")
+        var snapshot = try await capture(host, name: "lifecycle-initial-red")
         assertSolid(.red, snapshot: snapshot, reflection: host.reflection)
 
         scrollView.contentOffset.x = 280
         host.reflection.setNeedsReflectionUpdate()
-        snapshot = try await capture(host, name: "scroll-blue")
+        snapshot = try await capture(host, name: "lifecycle-scrolled-blue")
         assertSolid(.blue, snapshot: snapshot, reflection: host.reflection)
-    }
 
-    @MainActor
-    func testHidingAndShowingReflectionPreservesTheSourceAndRefreshesContent() async throws {
-        let host = try makeHost(blurRadius: 20)
-        defer { host.close() }
-        host.reflection.contentView.backgroundColor = .red
-        var snapshot = try await capture(host, name: "visible-red")
+        let replacement = UIView()
+        replacement.backgroundColor = .red
+        host.reflection.contentView = replacement
+        snapshot = try await capture(host, name: "lifecycle-replaced-red")
         assertSolid(.red, snapshot: snapshot, reflection: host.reflection)
 
         host.reflection.isReflectionHidden = true
-        snapshot = try await capture(host, name: "hidden-reflection")
+        snapshot = try await capture(host, name: "lifecycle-hidden-reflection")
         assertColor(.red, snapshot.pixel(in: host.reflection, x: 140, y: 100))
         assertColor(.black, snapshot.pixel(in: host.reflection, x: 140, y: 300))
 
-        host.reflection.contentView.backgroundColor = .blue
+        replacement.backgroundColor = .blue
         host.reflection.isReflectionHidden = false
-        snapshot = try await capture(host, name: "reshown-blue")
+        snapshot = try await capture(host, name: "lifecycle-reshown-blue")
         assertSolid(.blue, snapshot: snapshot, reflection: host.reflection)
     }
 
@@ -159,32 +141,34 @@ final class ReflectionRenderingTests: XCTestCase {
         defer { host.close() }
         host.reflection.removeFromSuperview()
         let rootView = try XCTUnwrap(host.window.rootViewController?.view)
-        let fixture = UIImageView(image: stripes())
-        fixture.frame = CGRect(x: 24, y: 100, width: 280, height: 200)
+        let fixtureImage = stripes()
+        let nativeFixture = UIImageView(image: fixtureImage)
+        nativeFixture.frame = CGRect(x: 24, y: 100, width: 280, height: 200)
+        rootView.addSubview(nativeFixture)
+        let fixture = UIImageView(image: fixtureImage)
+        fixture.frame = CGRect(x: 24, y: 320, width: 280, height: 200)
         rootView.addSubview(fixture)
 
         let nativeBlur = UIVisualEffectView(effect: UIBlurEffect(style: .regular))
-        nativeBlur.frame = fixture.frame
+        nativeBlur.frame = nativeFixture.frame
         rootView.addSubview(nativeBlur)
-        let nativeSnapshot = try await capture(host, name: "native-material-reference")
-        let nativeDark = nativeSnapshot.pixel(in: fixture, x: 98, y: 80).red
-        let nativeLight = nativeSnapshot.pixel(in: fixture, x: 102, y: 80).red
-        XCTAssertLessThan(abs(nativeLight - nativeDark), 0.2)
-        XCTAssertGreaterThan((nativeDark + nativeLight) / 2, 0.25)
-        nativeBlur.removeFromSuperview()
 
         let blur = VariableBlurView(frame: fixture.frame)
         blur.minimumBlurRadius = 0
         blur.maximumBlurRadius = 0
         blur.dimmingTintColor = nil
         rootView.addSubview(blur)
-        let fallbackSnapshot = try await capture(host, name: "unavailable-filter-native-fallback")
+        let fallbackSnapshot = try await capture(host, name: "native-material-and-unavailable-filter")
+        let nativeDark = fallbackSnapshot.pixel(in: nativeFixture, x: 98, y: 80).red
+        let nativeLight = fallbackSnapshot.pixel(in: nativeFixture, x: 102, y: 80).red
+        XCTAssertLessThan(abs(nativeLight - nativeDark), 0.2)
+        XCTAssertGreaterThan((nativeDark + nativeLight) / 2, 0.25)
 
-        // Compare pixels at the same positions against UIKit itself. Merely checking that
-        // the stripes are blurred would miss a fallback that accidentally hides its tint.
+        // Compare matching positions in identical fixtures captured in the same frame.
+        // Blur alone would miss a fallback that accidentally hides UIKit's material tint.
         for y: CGFloat in [80, 120] {
             for x: CGFloat in [98, 102] {
-                let expected = nativeSnapshot.pixel(in: fixture, x: x, y: y)
+                let expected = fallbackSnapshot.pixel(in: nativeFixture, x: x, y: y)
                 let actual = fallbackSnapshot.pixel(in: fixture, x: x, y: y)
                 XCTAssertEqual(actual.red, expected.red, accuracy: 0.03)
                 XCTAssertEqual(actual.green, expected.green, accuracy: 0.03)
@@ -203,6 +187,14 @@ final class ReflectionRenderingTests: XCTestCase {
             XCTAssertGreaterThan(light.red - dark.red, 0.8,
                                  "A later layout must replace native fallback with the requested zero-radius blur")
         }
+
+        let effect = try XCTUnwrap(blur.subviews.compactMap { $0 as? UIVisualEffectView }.first)
+        let backdrop = try XCTUnwrap(BlurFilterProvider.findSubview(in: effect, containing: "backdrop"))
+        let filter = try XCTUnwrap(backdrop.layer.filters?.first as? NSObject)
+        XCTAssertEqual(filter.value(forKey: "name") as? String, "variableBlur")
+        XCTAssertEqual(filter.value(forKey: "inputRadius") as? CGFloat, 0)
+        let overlay = try XCTUnwrap(BlurFilterProvider.findSubview(in: effect, containing: "subview"))
+        XCTAssertTrue(overlay.isHidden, "Recovery must install the custom blur and hide the native material tint")
     }
 
     // MARK: - Hosted Rendering
@@ -259,7 +251,7 @@ final class ReflectionRenderingTests: XCTestCase {
         }
         let attachment = XCTAttachment(image: image)
         attachment.name = name
-        attachment.lifetime = .keepAlways
+        attachment.lifetime = .deleteOnSuccess
         add(attachment)
         XCTAssertTrue(rendered, "A failed capture cannot validate reflection rendering")
         return try Snapshot(image: image, window: host.window)

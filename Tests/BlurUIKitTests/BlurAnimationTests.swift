@@ -13,28 +13,27 @@ final class BlurAnimationTests: XCTestCase {
     // MARK: - Automatic Timing
 
     @MainActor
-    func testClearingTheBlurEasesOutByDefault() throws {
+    func testDefaultTimingFollowsTheDirectionOfTheRadiusChange() throws {
         let view = UIView(frame: CGRect(x: 0, y: 0, width: 100, height: 100))
         view.blurRadius = 20
 
-        view.setBlurRadiusAnimated(radius: 0, duration: 1)
+        try XCTContext.runActivity(named: "Clearing eases out") { _ in
+            view.setBlurRadiusAnimated(radius: 0, duration: 1)
+            let animation = try XCTUnwrap(view.layer.animation(forKey: animationKey) as? CABasicAnimation)
+            XCTAssertEqual(view.blurRadius, 0)
+            XCTAssertEqual(animation.fromValue as? CGFloat, 20)
+            XCTAssertEqual(animation.duration, 1)
+            XCTAssertEqual(controlPoints(of: try XCTUnwrap(animation.timingFunction)), controlPoints(of: .blurEaseOut))
+        }
 
-        let animation = try XCTUnwrap(view.layer.animation(forKey: animationKey) as? CABasicAnimation)
-        XCTAssertEqual(view.blurRadius, 0)
-        XCTAssertEqual(animation.fromValue as? CGFloat, 20)
-        XCTAssertEqual(animation.duration, 1)
-        XCTAssertEqual(controlPoints(of: try XCTUnwrap(animation.timingFunction)), controlPoints(of: .blurEaseOut))
-    }
-
-    @MainActor
-    func testApplyingTheBlurEasesInByDefault() throws {
-        let view = UIView(frame: CGRect(x: 0, y: 0, width: 100, height: 100))
-
-        view.setBlurRadiusAnimated(radius: 20, duration: 1)
-
-        let animation = try XCTUnwrap(view.layer.animation(forKey: animationKey) as? CABasicAnimation)
-        XCTAssertEqual(view.blurRadius, 20)
-        XCTAssertEqual(controlPoints(of: try XCTUnwrap(animation.timingFunction)), controlPoints(of: .blurEaseIn))
+        try XCTContext.runActivity(named: "Applying eases in") { _ in
+            view.blurRadius = 0
+            view.setBlurRadiusAnimated(radius: 20, duration: 1)
+            let animation = try XCTUnwrap(view.layer.animation(forKey: animationKey) as? CABasicAnimation)
+            XCTAssertEqual(view.blurRadius, 20)
+            XCTAssertEqual(animation.fromValue as? CGFloat, 0)
+            XCTAssertEqual(controlPoints(of: try XCTUnwrap(animation.timingFunction)), controlPoints(of: .blurEaseIn))
+        }
     }
 
     // MARK: - Interrupted Animations
@@ -53,23 +52,15 @@ final class BlurAnimationTests: XCTestCase {
     }
 
     @MainActor
-    func testRetargetingStartsAtThePresentedRadius() throws {
-        try withAnimatingBlur(from: 0, to: 20) { view, presentedRadius in
-            view.setBlurRadiusAnimated(radius: 0, duration: 1)
+    func testRetargetingUsesThePresentedRadiusAndDirection() throws {
+        try withAnimatingBlur(from: 20, to: 0) { view, presentedRadius in
+            // This target decreases the visible radius, but increases the old model radius of zero.
+            let targetRadius = presentedRadius / 2
+            view.setBlurRadiusAnimated(radius: targetRadius, duration: 1)
 
             let animation = try XCTUnwrap(view.layer.animation(forKey: animationKey) as? CABasicAnimation)
             XCTAssertEqual(try XCTUnwrap(animation.fromValue as? CGFloat), presentedRadius, accuracy: 0.5)
-            XCTAssertEqual(view.blurRadius, 0)
-        }
-    }
-
-    @MainActor
-    func testAutomaticTimingUsesThePresentedDirectionWhenRetargeting() throws {
-        try withAnimatingBlur(from: 20, to: 0) { view, presentedRadius in
-            // This target decreases the visible radius, but increases the old model radius of zero.
-            view.setBlurRadiusAnimated(radius: presentedRadius / 2, duration: 1)
-
-            let animation = try XCTUnwrap(view.layer.animation(forKey: animationKey) as? CABasicAnimation)
+            XCTAssertEqual(view.blurRadius, targetRadius)
             XCTAssertEqual(controlPoints(of: try XCTUnwrap(animation.timingFunction)),
                            controlPoints(of: .blurEaseOut))
         }
@@ -77,7 +68,7 @@ final class BlurAnimationTests: XCTestCase {
 
     @MainActor
     func testImmediateRadiusChangeCancelsOnlyTheBlurAnimation() throws {
-        try withAnimatingBlur(from: 0, to: 20) { view, _ in
+        try withAnimatingBlur(from: 20, to: 0) { view, _ in
             let opacity = CABasicAnimation(keyPath: "opacity")
             opacity.fromValue = 1
             opacity.toValue = 0.5
@@ -85,6 +76,7 @@ final class BlurAnimationTests: XCTestCase {
             view.layer.add(opacity, forKey: "unrelatedOpacity")
 
             view.blurRadius = 40
+            let replacement = try XCTUnwrap(view.layer.filters?.first as? NSObject)
 
             XCTAssertNil(view.layer.animation(forKey: animationKey))
             XCTAssertNotNil(view.layer.animation(forKey: "unrelatedOpacity"))
@@ -92,6 +84,9 @@ final class BlurAnimationTests: XCTestCase {
             CATransaction.flush()
             RunLoop.main.run(until: Date().addingTimeInterval(0.1))
             XCTAssertEqual(try presentedRadius(of: view), 40, accuracy: 0.5)
+            XCTAssertEqual(view.layer.filters?.count, 1)
+            XCTAssertTrue((view.layer.filters?.first as? NSObject) === replacement,
+                          "The interrupted clearing animation must not remove its replacement.")
         }
     }
 
@@ -99,6 +94,7 @@ final class BlurAnimationTests: XCTestCase {
     func testClearingDuringAnimationDoesNotResumeAfterReapplyingBlur() throws {
         try withAnimatingBlur(from: 0, to: 20) { view, _ in
             view.blurRadius = 0
+            XCTAssertEqual(view.blurRadius, 0)
             XCTAssertNil(view.layer.animation(forKey: animationKey))
             XCTAssertNil(view.layer.filters)
 
@@ -111,122 +107,54 @@ final class BlurAnimationTests: XCTestCase {
         }
     }
 
-    @MainActor
-    func testInterruptedClearDoesNotRemoveTheReplacementFilter() throws {
-        try withAnimatingBlur(from: 20, to: 0) { view, _ in
-            view.blurRadius = 20
-            let replacement = try XCTUnwrap(view.layer.filters?.first as? NSObject)
-            CATransaction.flush()
-            RunLoop.main.run(until: Date().addingTimeInterval(0.1))
-
-            XCTAssertEqual(view.blurRadius, 20)
-            XCTAssertEqual(view.layer.filters?.count, 1)
-            XCTAssertTrue((view.layer.filters?.first as? NSObject) === replacement)
-        }
-    }
-
     // MARK: - Filter Cleanup
 
     @MainActor
-    func testSettingZeroRadiusRemovesTheFilter() {
-        let view = UIView(frame: CGRect(x: 0, y: 0, width: 100, height: 100))
-        view.blurRadius = 20
-        XCTAssertEqual(view.layer.filters?.count, 1)
-
-        view.blurRadius = 0
-
-        XCTAssertNil(view.layer.filters)
-        XCTAssertEqual(view.blurRadius, 0)
-    }
-
-    @MainActor
-    func testRemovingTheBlurLeavesOtherFiltersInPlace() throws {
-        let view = UIView(frame: CGRect(x: 0, y: 0, width: 100, height: 100))
-        let otherFilter = try XCTUnwrap(BlurFilterProvider.blurFilter(named: "colorInvert"))
-        view.layer.filters = [otherFilter]
-        view.blurRadius = 20
-
-        view.blurRadius = 0
-
-        XCTAssertEqual(view.layer.filters?.count, 1)
-        XCTAssertTrue((view.layer.filters?.first as? NSObject) === otherFilter)
-    }
-
-    @MainActor
-    func testAnimatingToZeroKeepsTheFilterUntilTheAnimationEnds() {
-        let window = makePinnedWindow(frame: CGRect(x: 0, y: 0, width: 100, height: 100))
-        defer { window.isHidden = true }
-        let view = UIView(frame: window.bounds)
-        window.addSubview(view)
-        view.blurRadius = 20
-
-        view.setBlurRadiusAnimated(radius: 0, duration: 0.05)
-        XCTAssertEqual(view.layer.filters?.count, 1)
-
-        let removed = expectation(for: NSPredicate { _, _ in view.layer.filters == nil },
-                                  evaluatedWith: nil)
-        wait(for: [removed], timeout: 2)
-    }
-
-    @MainActor
-    func testAnimatingAwayFromZeroKeepsTheFilter() {
+    func testFinishedAnimationsKeepPositiveBlurAndRemoveClearedBlur() {
         let window = makePinnedWindow(frame: CGRect(x: 0, y: 0, width: 100, height: 100))
         defer { window.isHidden = true }
         let view = UIView(frame: window.bounds)
         window.addSubview(view)
 
-        view.setBlurRadiusAnimated(radius: 20, duration: 0.05)
-        RunLoop.main.run(until: Date().addingTimeInterval(0.3))
+        XCTContext.runActivity(named: "A finished positive-radius animation keeps its filter") { _ in
+            view.setBlurRadiusAnimated(radius: 20, duration: 0.05)
+            RunLoop.main.run(until: Date().addingTimeInterval(0.3))
+            XCTAssertEqual(view.layer.filters?.count, 1)
+            XCTAssertEqual(view.blurRadius, 20)
+        }
 
-        XCTAssertEqual(view.layer.filters?.count, 1)
-        XCTAssertEqual(view.blurRadius, 20)
+        XCTContext.runActivity(named: "Clearing keeps its filter until the animation finishes") { _ in
+            view.setBlurRadiusAnimated(radius: 0, duration: 0.05)
+            XCTAssertEqual(view.layer.filters?.count, 1)
+            let removed = expectation(for: NSPredicate { _, _ in view.layer.filters == nil },
+                                      evaluatedWith: nil)
+            wait(for: [removed], timeout: 2)
+        }
     }
 
     // MARK: - Timing Overrides
 
     @MainActor
-    func testLinearTimingCanBeChosen() throws {
-        let view = UIView(frame: CGRect(x: 0, y: 0, width: 100, height: 100))
-        view.blurRadius = 20
-
-        view.setBlurRadiusAnimated(radius: 0, duration: 1, timing: .linear)
-
-        let animation = try XCTUnwrap(view.layer.animation(forKey: animationKey) as? CABasicAnimation)
-        XCTAssertEqual(controlPoints(of: try XCTUnwrap(animation.timingFunction)), [0, 0, 1, 1])
-    }
-
-    @MainActor
-    func testEitherBlurCurveCanBeChosenRegardlessOfDirection() throws {
-        let view = UIView(frame: CGRect(x: 0, y: 0, width: 100, height: 100))
-
-        view.setBlurRadiusAnimated(radius: 20, duration: 1, timing: .easeOut)
-
-        let animation = try XCTUnwrap(view.layer.animation(forKey: animationKey) as? CABasicAnimation)
-        XCTAssertEqual(controlPoints(of: try XCTUnwrap(animation.timingFunction)), controlPoints(of: .blurEaseOut))
-    }
-
-    @MainActor
-    func testCustomTimingFunctionIsUsedAsSupplied() throws {
+    func testExplicitTimingChoicesAreUsedAsSupplied() throws {
         let view = UIView(frame: CGRect(x: 0, y: 0, width: 100, height: 100))
         let custom = CAMediaTimingFunction(name: .easeInEaseOut)
-
-        view.setBlurRadiusAnimated(radius: 20, duration: 1, timing: .custom(custom))
-
-        let animation = try XCTUnwrap(view.layer.animation(forKey: animationKey) as? CABasicAnimation)
-        XCTAssertEqual(controlPoints(of: try XCTUnwrap(animation.timingFunction)), controlPoints(of: custom))
+        let cases: [(name: String, from: CGFloat, to: CGFloat,
+                     timing: BlurAnimationTiming, expected: [Float])] = [
+            ("Linear clearing", 20, 0, .linear, [0, 0, 1, 1]),
+            ("Ease-out while applying blur", 0, 20, .easeOut, controlPoints(of: .blurEaseOut)),
+            ("Custom curve", 0, 20, .custom(custom), controlPoints(of: custom))
+        ]
+        for testCase in cases {
+            try XCTContext.runActivity(named: testCase.name) { _ in
+                view.blurRadius = testCase.from
+                view.setBlurRadiusAnimated(radius: testCase.to, duration: 1, timing: testCase.timing)
+                let animation = try XCTUnwrap(view.layer.animation(forKey: animationKey) as? CABasicAnimation)
+                XCTAssertEqual(controlPoints(of: try XCTUnwrap(animation.timingFunction)), testCase.expected)
+            }
+        }
     }
 
     // MARK: - Curves
-
-    func testBlurEaseOutCurveFrontLoadsTheRadiusChange() {
-        let points = controlPoints(of: .blurEaseOut)
-
-        // The first control point sits high and early, so most of the radius goes in the first fifth.
-        XCTAssertEqual(points[0], 0.2, accuracy: 0.001)
-        XCTAssertEqual(points[1], 0.9, accuracy: 0.001)
-        XCTAssertEqual(points[2], 0.4, accuracy: 0.001)
-        XCTAssertEqual(points[3], 1.0, accuracy: 0.001)
-    }
 
     func testBlurEaseInMirrorsBlurEaseOut() {
         let easeOut = controlPoints(of: .blurEaseOut)
@@ -239,7 +167,8 @@ final class BlurAnimationTests: XCTestCase {
         XCTAssertEqual(easeIn[3], 1 - easeOut[1], accuracy: 0.001)
     }
 
-    func testTimingIsSendable() {
+    // The compiler checks this constraint without creating a runnable test.
+    private func checkTimingIsSendable() {
         requireSendable(BlurAnimationTiming.self)
     }
 

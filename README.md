@@ -140,8 +140,9 @@ The example app compiles the library sources directly, so both suites contribute
 the same coverage entries.
 
 The unit test files are shared with the Swift package's `BlurUIKitTests` target.
-CI also runs them against the separate `BlurUIKit` and `BlurSwiftUI` package modules
-to verify package integration. Rendering tests require the example app as their host.
+CI also compiles them against the separate `BlurUIKit` and `BlurSwiftUI` package modules
+to verify package integration, without executing the shared tests a second time.
+Rendering tests require the example app as their host and are excluded from the package target.
 
 # Is this really App Store safe?
 

@@ -27,44 +27,28 @@ final class BlurFilterFailureTests: XCTestCase {
     }
 
     @MainActor
-    func testFailedDirectReplacementPreservesTheFilterAndRunningAnimation() throws {
+    func testFailedReplacementsPreserveTheBlurUntilItIsExplicitlyCleared() throws {
         let (view, otherFilter) = try makeViewWithUnrelatedFilter()
         view.blurRadius = 4
         view.setBlurRadiusAnimated(radius: 20, duration: 10, timing: .linear)
         let installedFilter = try XCTUnwrap(view.layer.filters?.last as? NSObject)
 
         try withFailedFilterCreation {
-            view.blurRadius = 40
-
-            XCTAssertEqual(view.blurRadius, 20)
-            XCTAssertEqual(view.layer.filters?.count, 2)
-            XCTAssertTrue((view.layer.filters?.first as? NSObject) === otherFilter)
-            XCTAssertTrue((view.layer.filters?.last as? NSObject) === installedFilter)
-            let animation = try XCTUnwrap(view.layer.animation(forKey: animationKey) as? CABasicAnimation)
-            XCTAssertEqual(animation.fromValue as? CGFloat, 4)
-            XCTAssertEqual(animation.toValue as? CGFloat, 20)
-            XCTAssertEqual(animation.duration, 10)
-        }
-    }
-
-    @MainActor
-    func testFailedAnimatedReplacementPreservesTheFilterAndRunningAnimation() throws {
-        let (view, otherFilter) = try makeViewWithUnrelatedFilter()
-        view.blurRadius = 4
-        view.setBlurRadiusAnimated(radius: 20, duration: 10, timing: .linear)
-        let installedFilter = try XCTUnwrap(view.layer.filters?.last as? NSObject)
-
-        try withFailedFilterCreation {
-            view.setBlurRadiusAnimated(radius: 40, duration: 1)
-
-            XCTAssertEqual(view.blurRadius, 20)
-            XCTAssertEqual(view.layer.filters?.count, 2)
-            XCTAssertTrue((view.layer.filters?.first as? NSObject) === otherFilter)
-            XCTAssertTrue((view.layer.filters?.last as? NSObject) === installedFilter)
-            let animation = try XCTUnwrap(view.layer.animation(forKey: animationKey) as? CABasicAnimation)
-            XCTAssertEqual(animation.fromValue as? CGFloat, 4)
-            XCTAssertEqual(animation.toValue as? CGFloat, 20)
-            XCTAssertEqual(animation.duration, 10)
+            try XCTContext.runActivity(named: "A failed direct replacement preserves the running blur") { _ in
+                view.blurRadius = 40
+                try assertOriginalBlur(on: view, filter: installedFilter, otherFilter: otherFilter)
+            }
+            try XCTContext.runActivity(named: "A failed animated replacement preserves the running blur") { _ in
+                view.setBlurRadiusAnimated(radius: 40, duration: 1)
+                try assertOriginalBlur(on: view, filter: installedFilter, otherFilter: otherFilter)
+            }
+            XCTContext.runActivity(named: "Zero still clears the blur while filter creation is unavailable") { _ in
+                view.blurRadius = 0
+                XCTAssertEqual(view.blurRadius, 0)
+                XCTAssertNil(view.layer.animation(forKey: animationKey))
+                XCTAssertEqual(view.layer.filters?.count, 1)
+                XCTAssertTrue((view.layer.filters?.first as? NSObject) === otherFilter)
+            }
         }
     }
 
@@ -90,18 +74,17 @@ final class BlurFilterFailureTests: XCTestCase {
     }
 
     @MainActor
-    func testZeroStillClearsTheBlurWhenFilterCreationFails() throws {
-        let (view, otherFilter) = try makeViewWithUnrelatedFilter()
-        view.setBlurRadiusAnimated(radius: 20, duration: 10)
-
-        withFailedFilterCreation {
-            view.blurRadius = 0
-
-            XCTAssertEqual(view.blurRadius, 0)
-            XCTAssertNil(view.layer.animation(forKey: animationKey))
-            XCTAssertEqual(view.layer.filters?.count, 1)
-            XCTAssertTrue((view.layer.filters?.first as? NSObject) === otherFilter)
-        }
+    private func assertOriginalBlur(on view: UIView, filter: NSObject, otherFilter: NSObject,
+                                    file: StaticString = #filePath, line: UInt = #line) throws {
+        XCTAssertEqual(view.blurRadius, 20, file: file, line: line)
+        XCTAssertEqual(view.layer.filters?.count, 2, file: file, line: line)
+        XCTAssertTrue((view.layer.filters?.first as? NSObject) === otherFilter, file: file, line: line)
+        XCTAssertTrue((view.layer.filters?.last as? NSObject) === filter, file: file, line: line)
+        let animation = try XCTUnwrap(view.layer.animation(forKey: animationKey) as? CABasicAnimation,
+                                     file: file, line: line)
+        XCTAssertEqual(animation.fromValue as? CGFloat, 4, file: file, line: line)
+        XCTAssertEqual(animation.toValue as? CGFloat, 20, file: file, line: line)
+        XCTAssertEqual(animation.duration, 10, file: file, line: line)
     }
 
     @MainActor
