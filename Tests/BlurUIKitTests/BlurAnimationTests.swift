@@ -87,6 +87,25 @@ final class BlurAnimationTests: XCTestCase {
             XCTAssertEqual(view.layer.filters?.count, 1)
             XCTAssertTrue((view.layer.filters?.first as? NSObject) === replacement,
                           "The interrupted clearing animation must not remove its replacement.")
+
+            for duration: TimeInterval in [0, -1] {
+                XCTContext.runActivity(named: "Duration \(duration) applies and clears immediately") { _ in
+                    view.setBlurRadiusAnimated(radius: 0, duration: 2)
+                    XCTAssertNotNil(view.layer.animation(forKey: animationKey))
+
+                    view.setBlurRadiusAnimated(radius: 40, duration: duration)
+                    XCTAssertNil(view.layer.animation(forKey: animationKey))
+                    XCTAssertEqual(view.blurRadius, 40)
+                    XCTAssertEqual(view.layer.filters?.count, 1)
+                    XCTAssertNotNil(view.layer.animation(forKey: "unrelatedOpacity"))
+
+                    view.setBlurRadiusAnimated(radius: 0, duration: duration)
+                    XCTAssertEqual(view.blurRadius, 0)
+                    XCTAssertNil(view.layer.animation(forKey: animationKey))
+                    XCTAssertNil(view.layer.filters)
+                    XCTAssertNotNil(view.layer.animation(forKey: "unrelatedOpacity"))
+                }
+            }
         }
     }
 

@@ -52,6 +52,7 @@ extension UIView {
     /// - Parameters:
     ///   - radius: The blur radius to animate to.
     ///   - duration: How long the animation runs. Defaults to 0.45 seconds.
+    ///     Zero or negative durations apply the radius immediately.
     ///   - timing: How the radius is paced over the duration. Defaults to `.automatic`, which
     ///     eases out when clearing a blur and eases in when applying one, so the visible change
     ///     is spread evenly either way. Choose `.linear` for a constant rate, or `.custom` to
@@ -59,6 +60,11 @@ extension UIView {
     public func setBlurRadiusAnimated(radius: CGFloat,
                                       duration: TimeInterval = 0.45,
                                       timing: BlurAnimationTiming = .automatic) {
+        if duration <= 0 {
+            blurRadius = radius
+            return
+        }
+
         let currentRadius = inFlightBlurRadius ?? blurRadius
 
         // Keep a filter in place even when clearing the blur, so there is something to animate.
