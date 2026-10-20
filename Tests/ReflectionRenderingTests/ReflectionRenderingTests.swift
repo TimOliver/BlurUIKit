@@ -1,6 +1,6 @@
 import XCTest
 import UIKit
-import BlurUIKitExample
+@testable import BlurUIKitExample
 
 /// These tests need the example app's window scene and render server. Unhosted package
 /// tests cannot capture a UIVisualEffectView backdrop reliably with drawHierarchy.
@@ -142,6 +142,67 @@ final class ReflectionRenderingTests: XCTestCase {
         XCTAssertGreaterThan(extendedDimming.red, 0.8)
         XCTAssertLessThan(extendedDimming.green, 0.1)
         assertColor(.black, snapshot.pixel(in: host.reflection, x: 40, y: 80))
+    }
+
+    @MainActor
+    func testUnavailableFilterKeepsNativeMaterialAndRecoversOnLaterLayout() async throws {
+        let originalProvider = BlurFilterProvider.shared
+        let originalReduceTransparency = VariableBlurView.isReduceTransparencyEnabled
+        defer {
+            BlurFilterProvider.shared = originalProvider
+            VariableBlurView.isReduceTransparencyEnabled = originalReduceTransparency
+        }
+        VariableBlurView.isReduceTransparencyEnabled = { false }
+        BlurFilterProvider.shared = BlurFilterProvider(discover: { nil })
+
+        let host = try makeHost()
+        defer { host.close() }
+        host.reflection.removeFromSuperview()
+        let rootView = try XCTUnwrap(host.window.rootViewController?.view)
+        let fixture = UIImageView(image: stripes())
+        fixture.frame = CGRect(x: 24, y: 100, width: 280, height: 200)
+        rootView.addSubview(fixture)
+
+        let nativeBlur = UIVisualEffectView(effect: UIBlurEffect(style: .regular))
+        nativeBlur.frame = fixture.frame
+        rootView.addSubview(nativeBlur)
+        let nativeSnapshot = try await capture(host, name: "native-material-reference")
+        let nativeDark = nativeSnapshot.pixel(in: fixture, x: 98, y: 80).red
+        let nativeLight = nativeSnapshot.pixel(in: fixture, x: 102, y: 80).red
+        XCTAssertLessThan(abs(nativeLight - nativeDark), 0.2)
+        XCTAssertGreaterThan((nativeDark + nativeLight) / 2, 0.25)
+        nativeBlur.removeFromSuperview()
+
+        let blur = VariableBlurView(frame: fixture.frame)
+        blur.minimumBlurRadius = 0
+        blur.maximumBlurRadius = 0
+        blur.dimmingTintColor = nil
+        rootView.addSubview(blur)
+        let fallbackSnapshot = try await capture(host, name: "unavailable-filter-native-fallback")
+
+        // Compare pixels at the same positions against UIKit itself. Merely checking that
+        // the stripes are blurred would miss a fallback that accidentally hides its tint.
+        for y: CGFloat in [80, 120] {
+            for x: CGFloat in [98, 102] {
+                let expected = nativeSnapshot.pixel(in: fixture, x: x, y: y)
+                let actual = fallbackSnapshot.pixel(in: fixture, x: x, y: y)
+                XCTAssertEqual(actual.red, expected.red, accuracy: 0.03)
+                XCTAssertEqual(actual.green, expected.green, accuracy: 0.03)
+                XCTAssertEqual(actual.blue, expected.blue, accuracy: 0.03)
+            }
+        }
+
+        BlurFilterProvider.shared = originalProvider
+        blur.setNeedsLayout()
+        let recoveredSnapshot = try await capture(host, name: "filter-recovery-zero-radius")
+        for y: CGFloat in [80, 120] {
+            let dark = recoveredSnapshot.pixel(in: fixture, x: 98, y: y)
+            let light = recoveredSnapshot.pixel(in: fixture, x: 102, y: y)
+            assertColor(.black, dark)
+            assertColor(.white, light)
+            XCTAssertGreaterThan(light.red - dark.red, 0.8,
+                                 "A later layout must replace native fallback with the requested zero-radius blur")
+        }
     }
 
     // MARK: - Hosted Rendering

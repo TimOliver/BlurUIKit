@@ -33,6 +33,9 @@ import UIKit
 /// or `replacesBlurWhenReducingTransparency` to false to keep the blur.
 ///
 /// When Increase Contrast is on, the dimming gradient is made stronger.
+///
+/// If a custom blur filter is unavailable, the last working blur is kept, or UIKit's
+/// regular material is used until a later layout can install the custom filter.
 public class VariableBlurView: UIView {
 
     // MARK: - Public Properties
@@ -186,6 +189,12 @@ public class VariableBlurView: UIView {
     /// Weak, so it clears itself if UIKit replaces the backdrop's filters and releases ours.
     private weak var installedBlurFilter: NSObject?
 
+    /// UIKit may replace the filter independently of our cached reference.
+    private var isCustomBlurInstalled: Bool {
+        guard let installedBlurFilter else { return false }
+        return (backdropView?.layer.filters?.first as? NSObject) === installedBlurFilter
+    }
+
     /// Set when the installed filter is out of date, or the backdrop needs a fresh capture.
     private var needsBlurFilterRebuild = true
 
@@ -288,13 +297,6 @@ public class VariableBlurView: UIView {
     // UIVisualEffectView may rebuild its subview hierarchy on trait changes.
     private func configureView() {
         guard superview != nil else { return }
-
-        // Find the overlay view (The one that lightens or darkens these blur views) and hide it.
-        if overlayView == nil {
-            overlayView = BlurFilterProvider.findSubview(in: blurEffectView, containing: "subview")
-        }
-        overlayView?.isHidden = true
-
         // Apply a fresh filter to the backdrop view if the current one is out of date
         updateBlurFilter()
     }
@@ -324,19 +326,22 @@ public class VariableBlurView: UIView {
     // Install a fresh blur filter on the backdrop when the current one is out of date.
     // Changing an installed filter's values has no effect, so a new filter is always created.
     private func updateBlurFilter() {
-        guard let gradientMaskImage else { return }
-
         if backdropView?.superview !== blurEffectView {
             backdropView = BlurFilterProvider.findSubview(in: blurEffectView, containing: "backdrop")
         }
-        guard let backdropView else { return }
+        if overlayView?.superview !== blurEffectView {
+            overlayView = BlurFilterProvider.findSubview(in: blurEffectView, containing: "subview")
+        }
+        // Keep the native material's tint until we can replace its blur. If UIKit restores
+        // its own filters, restore the tint too; an older custom filter can still stay visible
+        // when only its replacement failed. This also runs after generating a new mask.
+        defer { overlayView?.isHidden = isCustomBlurInstalled }
+        guard let gradientMaskImage, let backdropView else { return }
 
         // Skip the rebuild if nothing changed and our filter is still the one installed.
         // UIKit may swap out the backdrop's filters (or the backdrop itself) on its own,
         // so check the filter actually on the layer rather than trusting our own state.
-        if !needsBlurFilterRebuild,
-           let installedBlurFilter,
-           (backdropView.layer.filters?.first as? NSObject) === installedBlurFilter {
+        if !needsBlurFilterRebuild, isCustomBlurInstalled {
             return
         }
 
