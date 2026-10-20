@@ -114,6 +114,64 @@ final class VisualEffectViewBlurTests: XCTestCase {
         XCTAssertEqual(try value(of: backdrop, at: saturationKeyPath), 1, accuracy: 0.001)
     }
 
+    // MARK: - Appearance Changes
+
+    @MainActor
+    func testValuesSurviveAnAppearanceChange() throws {
+        let window = makePinnedWindow(style: .light)
+        defer { window.isHidden = true }
+        let effectView = UIVisualEffectView(effect: UIBlurEffect(style: .regular))
+        effectView.frame = window.bounds
+        window.addSubview(effectView)
+        window.layoutIfNeeded()
+        let backdrop = try backdropLayer(of: effectView)
+        let lightScale = try value(of: backdrop, at: "scale")
+
+        // UIKit's own dark-mode values, from an untouched view, to derive the expectations from
+        let darkWindow = makePinnedWindow(style: .dark)
+        defer { darkWindow.isHidden = true }
+        let reference = UIVisualEffectView(effect: UIBlurEffect(style: .regular))
+        reference.frame = darkWindow.bounds
+        darkWindow.addSubview(reference)
+        darkWindow.layoutIfNeeded()
+        let darkRadius = try value(of: try backdropLayer(of: reference), at: radiusKeyPath)
+        let darkSaturation = try value(of: try backdropLayer(of: reference), at: saturationKeyPath)
+
+        effectView.blurEffectRadius = 5
+        effectView.dimmingAlpha = 0.3
+        window.overrideUserInterfaceStyle = .dark
+        if #available(iOS 17, *) { window.updateTraitsIfNeeded() }
+        window.layoutIfNeeded()
+
+        XCTAssertEqual(effectView.blurEffectRadius, 5)
+        XCTAssertEqual(effectView.dimmingAlpha, 0.3, accuracy: 0.001)
+        let fraction = 5 / darkRadius
+        XCTAssertEqual(try value(of: backdrop, at: saturationKeyPath), 1 + (darkSaturation - 1) * fraction, accuracy: 0.001,
+                       "Companions follow the radius against UIKit's values for the new appearance")
+        XCTAssertEqual(try value(of: backdrop, at: "scale"), 1 - (1 - lightScale) * fraction, accuracy: 0.001,
+                       "The capture scale is still measured against UIKit's original, not a previous adjustment")
+    }
+
+    @MainActor
+    func testUntouchedViewsFollowUIKitAcrossAppearanceChanges() throws {
+        let window = makePinnedWindow(style: .light)
+        defer { window.isHidden = true }
+        let effectView = UIVisualEffectView(effect: UIBlurEffect(style: .regular))
+        effectView.frame = window.bounds
+        window.addSubview(effectView)
+        window.layoutIfNeeded()
+        let lightRadius = effectView.blurEffectRadius
+        XCTAssertTrue(effectView.contentView.subviews.isEmpty, "Reading the properties adds nothing to the view")
+
+        window.overrideUserInterfaceStyle = .dark
+        if #available(iOS 17, *) { window.updateTraitsIfNeeded() }
+        window.layoutIfNeeded()
+
+        XCTAssertNotEqual(effectView.blurEffectRadius, lightRadius, "UIKit's dark-mode radius differs and must win")
+        XCTAssertEqual(effectView.dimmingAlpha, 1)
+        XCTAssertTrue(effectView.contentView.subviews.isEmpty)
+    }
+
     // MARK: - Dimming
 
     @MainActor
