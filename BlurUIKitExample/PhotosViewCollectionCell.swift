@@ -7,7 +7,7 @@
 
 import UIKit
 
-private var appleParkAtlas: UIImage = {
+private let appleParkAtlas: UIImage = {
     if let image = UIImage(named: "AppleParkAtlas")?.preparingForDisplay() {
         return image
     }
