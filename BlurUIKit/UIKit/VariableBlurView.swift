@@ -26,7 +26,6 @@ import UIKit
 /// in blur intensity from one edge to the other.
 /// This is great for separating separate layers of content (such as the iOS status bar)
 /// without any hard border lines.
-@available(iOS 14, *)
 public class VariableBlurView: UIView {
 
     /// The possible directions that the gradient of this blur view may flow in.
@@ -312,7 +311,6 @@ public class VariableBlurView: UIView {
 
 // MARK: Image Reset
 
-@available(iOS 14, *)
 extension VariableBlurView {
     /// Schedules the backdrop filter to be recreated without invalidating its gradient images.
     internal func setNeedsBlurFilterUpdate() {
@@ -361,7 +359,6 @@ extension VariableBlurView {
 
 // MARK: Image Generation
 
-@available(iOS 14, *)
 extension VariableBlurView {
 
     private func generateImagesAsNeeded() {
@@ -470,7 +467,6 @@ extension VariableBlurView {
 
 // MARK: Deprecated
 
-@available(iOS 14, *)
 extension VariableBlurView {
     /// An optional amount of insetting from the opaque side where the blur reaches 100%.
     @available(*, deprecated, renamed: "blurMaximumRadiusInset")

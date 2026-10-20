@@ -24,7 +24,6 @@ import UIKit
 
 /// A UIView that vertically mirrors its hosted content,
 /// and applies a variable blur effect to the reflection.
-@available(iOS 14, *)
 public class ReflectionBlurView: UIView {
 
     // MARK: - Public Properties

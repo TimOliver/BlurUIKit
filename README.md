@@ -87,7 +87,7 @@ redSquare.setBlurRadiusAnimated(radius: 0, duration: 0.6)
 
 # Requirements
 
-`BlurUIKit` should work with iOS 15 and above. It may work on lower versions of iOS, but this hasnt been tested.
+`BlurUIKit` should work with iOS 15 and above. It may work on lower versions of iOS, but this hasn't been tested.
 
 # Installation
 

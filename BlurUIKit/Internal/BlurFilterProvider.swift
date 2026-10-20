@@ -24,7 +24,6 @@ import UIKit
 
 // An internal class that creates, manages and vends the blur filters
 // used by the public classes of this framework.
-@available(iOS 14, *)
 @MainActor internal class BlurFilterProvider {
 
     /// The CAFilter class, extracted once from a temporary UIVisualEffectView.
@@ -49,7 +48,7 @@ import UIKit
 
     /// Vends a newly instantiated CAFilter instance with the provided filter name
     /// - Parameter name: The name of the filter that this filter will be instantiated with.
-    /// - Returns: The new CAFilter object, or nil if the filter if it couldn't be created.
+    /// - Returns: The new CAFilter object, or nil if it couldn't be created.
     static func blurFilter(named name: String) -> NSObject? {
         guard let filterClass, let filterSelector else { return nil }
         return (filterClass as AnyObject).perform(filterSelector, with: name)?.takeUnretainedValue() as? NSObject
@@ -57,7 +56,7 @@ import UIKit
 
     /// Loop through a view's subviews and find the one with its class name containing the provided string
     /// - Parameter view: The view whose subviews will be searched.
-    /// - Parameter name: The portion of the name of the subiew to find.
+    /// - Parameter name: The portion of the name of the subview to find.
     /// - Returns: The subview if it is found, or nil otherwise.
     static func findSubview(in view: UIView, containing name: String) -> UIView? {
         let lowercasedName = name.lowercased()

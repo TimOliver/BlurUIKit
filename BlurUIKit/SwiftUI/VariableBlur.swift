@@ -42,7 +42,6 @@ import BlurUIKit
 ///
 /// All default values match those of ``VariableBlurView``, so a plain `VariableBlur()` produces
 /// the same result as a default `VariableBlurView`.
-@available(iOS 14, *)
 public struct VariableBlur: UIViewRepresentable {
 
     public typealias Direction = VariableBlurView.Direction
@@ -225,7 +224,6 @@ public struct VariableBlur: UIViewRepresentable {
 
 // MARK: - Deprecated Modifiers
 
-@available(iOS 14, *)
 extension VariableBlur {
     /// Sets an inset from the opaque edge where the blur gradient reaches full intensity.
     @available(*, deprecated, renamed: "blurMaximumRadiusInset(_:)")

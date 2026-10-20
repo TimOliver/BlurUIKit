@@ -25,7 +25,6 @@ import UIKit
 /// An internal enum that generates gradient images pixel-by-pixel with eased
 /// alpha transitions. This approach ensures smooth gradients across all iOS versions,
 /// avoiding the hard edge artifacts present in CGGradient on iOS 16 and earlier.
-@available(iOS 14, *)
 @MainActor internal enum BlurGradientImageRenderer {
 
     /// A shared cache that allows multiple blur views to re-use the same gradient image
