@@ -189,6 +189,38 @@ final class BlurAnimationTests: XCTestCase {
     // MARK: - Timing Overrides
 
     @MainActor
+    func testDelayedAnimationHoldsTheStartingRadiusUntilItBegins() throws {
+        let view = UIView(frame: CGRect(x: 0, y: 0, width: 100, height: 100))
+        view.blurRadius = 20
+
+        try XCTContext.runActivity(named: "A delay holds the blur, then clears it") { _ in
+            let before = view.layer.convertTime(CACurrentMediaTime(), from: nil)
+            view.setBlurRadiusAnimated(radius: 0, duration: 1, delay: 0.5)
+            let animation = try XCTUnwrap(view.layer.animation(forKey: animationKey) as? CABasicAnimation)
+            XCTAssertEqual(view.blurRadius, 0)
+            XCTAssertEqual(animation.fromValue as? CGFloat, 20)
+            XCTAssertEqual(animation.beginTime, before + 0.5, accuracy: 0.1)
+            XCTAssertEqual(animation.fillMode, .backwards)
+            XCTAssertNotNil(view.layer.filters?.first, "The filter stays in place while the clearing waits to start.")
+        }
+
+        try XCTContext.runActivity(named: "No delay starts at once") { _ in
+            view.blurRadius = 20
+            view.setBlurRadiusAnimated(radius: 0, duration: 1)
+            let animation = try XCTUnwrap(view.layer.animation(forKey: animationKey) as? CABasicAnimation)
+            XCTAssertEqual(animation.beginTime, 0)
+            XCTAssertEqual(animation.fillMode, .removed)
+        }
+
+        XCTContext.runActivity(named: "A delay without a duration still applies the radius at once") { _ in
+            view.blurRadius = 20
+            view.setBlurRadiusAnimated(radius: 0, duration: 0, delay: 0.5)
+            XCTAssertNil(view.layer.animation(forKey: animationKey))
+            XCTAssertNil(view.layer.filters)
+        }
+    }
+
+    @MainActor
     func testExplicitTimingChoicesAreUsedAsSupplied() throws {
         let view = UIView(frame: CGRect(x: 0, y: 0, width: 100, height: 100))
         let custom = CAMediaTimingFunction(name: .easeInEaseOut)

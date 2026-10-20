@@ -83,6 +83,9 @@ redSquare.blurRadius = 30.0
 // Animate it away
 redSquare.setBlurRadiusAnimated(radius: 0, duration: 0.6)
 
+// Or hold the blur for a moment first, then animate it away
+redSquare.setBlurRadiusAnimated(radius: 0, duration: 0.6, delay: 0.3)
+
 ```
 
 # Requirements

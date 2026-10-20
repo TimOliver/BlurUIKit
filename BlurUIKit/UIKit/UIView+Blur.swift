@@ -53,13 +53,17 @@ extension UIView {
     /// - Parameters:
     ///   - radius: The blur radius to animate to.
     ///   - duration: How long the animation runs. Defaults to 0.45 seconds.
-    ///     Zero or negative durations apply the radius immediately.
+    ///     Zero or negative durations apply the radius immediately, whatever the delay.
+    ///   - delay: How long the current radius holds before the animation starts. Defaults to zero.
+    ///     The filter stays in place throughout, so a blur that clears after a delay is still
+    ///     showing while it waits.
     ///   - timing: How the radius is paced over the duration. Defaults to `.automatic`, which
     ///     eases out when clearing a blur and eases in when applying one, so the visible change
     ///     is spread evenly either way. Choose `.linear` for a constant rate, or `.custom` to
     ///     supply any timing function.
     public func setBlurRadiusAnimated(radius: CGFloat,
                                       duration: TimeInterval = 0.45,
+                                      delay: TimeInterval = 0,
                                       timing: BlurAnimationTiming = .automatic) {
         if duration <= 0 {
             blurRadius = radius
@@ -83,6 +87,12 @@ extension UIView {
         blurAnimation.toValue = radius
         blurAnimation.duration = duration
         blurAnimation.timingFunction = timing.timingFunction(from: currentRadius, to: radius)
+        if delay > 0 {
+            // Fill backwards so the starting radius shows during the delay, rather than the
+            // model's new radius, which the layer already holds.
+            blurAnimation.beginTime = layer.convertTime(CACurrentMediaTime(), from: nil) + delay
+            blurAnimation.fillMode = .backwards
+        }
 
         CATransaction.begin()
         CATransaction.setCompletionBlock { [weak self] in
