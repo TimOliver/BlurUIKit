@@ -51,13 +51,13 @@ public class ReflectionBlurView: UIView {
     }
 
     /// The maximum blur radius applied at the far edge of the reflection.
-    public var maximumBlurRadius: Double {
+    public var maximumBlurRadius: CGFloat {
         get { blurView.maximumBlurRadius }
         set { blurView.maximumBlurRadius = newValue }
     }
 
     /// The minimum blur radius applied where the reflection begins.
-    public var minimumBlurRadius: Double {
+    public var minimumBlurRadius: CGFloat {
         get { blurView.minimumBlurRadius }
         set { blurView.minimumBlurRadius = newValue }
     }

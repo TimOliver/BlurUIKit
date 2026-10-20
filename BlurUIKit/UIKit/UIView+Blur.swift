@@ -87,7 +87,10 @@ extension UIView {
 /// the radius at a constant rate therefore looks uneven: holding and then snapping sharp when
 /// clearing, or snapping blurred and then idling when applying. The blur curves bend the radius
 /// so the visible change is spread evenly, in whichever direction it runs.
-public enum BlurAnimationTiming {
+///
+/// This is `@unchecked Sendable` only because `CAMediaTimingFunction` isn't marked `Sendable`.
+/// It's safe to share, since a timing function's control points can't change after it's created.
+public enum BlurAnimationTiming: @unchecked Sendable {
 
     /// `.easeOut` when the radius is decreasing and `.easeIn` when it is increasing. The default.
     case automatic

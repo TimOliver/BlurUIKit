@@ -28,7 +28,8 @@ import UIKit
 /// without any hard border lines.
 ///
 /// When the system Reduce Transparency setting is on, the blur is removed and only the
-/// dimming gradient is shown, at full opacity. Set `dimmingTintColor` to nil to show nothing.
+/// dimming gradient is shown, at full opacity. Set `dimmingTintColor` to nil to show nothing,
+/// or `replacesBlurWhenReducingTransparency` to false to keep the blur.
 /// When Increase Contrast is on, the dimming gradient is made stronger.
 public class VariableBlurView: UIView {
 
@@ -65,7 +66,7 @@ public class VariableBlurView: UIView {
     }
 
     /// The minimum blur radius at the normally transparent end of the gradient.
-    public var minimumBlurRadius = 0.0 {
+    public var minimumBlurRadius: CGFloat = 0.0 {
         didSet {
             guard minimumBlurRadius != oldValue else { return }
             resetBlurMask()
@@ -73,7 +74,7 @@ public class VariableBlurView: UIView {
     }
 
     /// The maximum blur radius of the blur view when its gradient is at full opacity.
-    public var maximumBlurRadius = 3.5 {
+    public var maximumBlurRadius: CGFloat = 3.5 {
         didSet {
             guard maximumBlurRadius != oldValue else { return }
             resetBlurMask()
@@ -132,8 +133,9 @@ public class VariableBlurView: UIView {
     }
 
     /// Whether the blur is swapped for full-strength dimming while Reduce Transparency is on.
-    /// Reflections turn this off, since without their blur they'd become a sharp mirror image.
-    internal var replacesBlurWhenReducingTransparency = true {
+    /// Defaults to true. Only turn this off when the blur is essential to the content, since
+    /// people enable Reduce Transparency specifically to remove effects like this one.
+    public var replacesBlurWhenReducingTransparency = true {
         didSet {
             guard replacesBlurWhenReducingTransparency != oldValue else { return }
             setNeedsLayout()
@@ -472,11 +474,11 @@ extension VariableBlurView {
         guard !minimumBlurRadius.isNaN else { return 0.0 }
 
         let minimumRadius = min(max(minimumBlurRadius, 0.0), maximumRadius)
-        return CGFloat(minimumRadius / maximumRadius)
+        return minimumRadius / maximumRadius
     }
 
     /// The validated radius passed to the underlying blur filter.
-    private var effectiveMaximumBlurRadius: Double {
+    private var effectiveMaximumBlurRadius: CGFloat {
         guard maximumBlurRadius.isFinite else { return 0.0 }
         return max(maximumBlurRadius, 0.0)
     }
