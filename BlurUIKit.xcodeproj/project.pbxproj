@@ -24,7 +24,18 @@
 		22GRAD012E3D000000000001 /* BlurGradientImageRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22GRAD002E3D000000000000 /* BlurGradientImageRenderer.swift */; };
 		22SWUI002E4B000000000001 /* VariableBlur.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22SWUI012E4B000000000002 /* VariableBlur.swift */; };
 		22SWUI022E4B000000000003 /* SwiftUIExampleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22SWUI032E4B000000000004 /* SwiftUIExampleView.swift */; };
+		AAEFC312426D417B1B99A904 /* ReflectionRenderingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6825ED84067EA37689977422 /* ReflectionRenderingTests.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		F54DE80F85DF7904D79081AB /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 229642BA2C1E8768003C04C5 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 229642C12C1E8768003C04C5;
+			remoteInfo = BlurUIKitExample;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		226E9CBC2D25388F007EFE4D /* BlurUIKit.podspec */ = {isa = PBXFileReference; lastKnownFileType = text; path = BlurUIKit.podspec; sourceTree = "<group>"; };
@@ -50,6 +61,8 @@
 		22GRAD002E3D000000000000 /* BlurGradientImageRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlurGradientImageRenderer.swift; sourceTree = "<group>"; };
 		22SWUI012E4B000000000002 /* VariableBlur.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VariableBlur.swift; sourceTree = "<group>"; };
 		22SWUI032E4B000000000004 /* SwiftUIExampleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftUIExampleView.swift; sourceTree = "<group>"; };
+		6825ED84067EA37689977422 /* ReflectionRenderingTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ReflectionRenderingTests.swift; sourceTree = "<group>"; };
+		FBF59FC9E6DA179E742F3F8E /* BlurUIKitRenderingTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BlurUIKitRenderingTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -60,9 +73,25 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F6A54EF8A66D021AE593730B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		01D9D8F5A02929BD3F8C4757 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				37DC5D9C21EE052AE6C17FCB /* ReflectionRenderingTests */,
+			);
+			name = Tests;
+			path = Tests;
+			sourceTree = "<group>";
+		};
 		228C22EA2F3B42FD00AC49DD /* SwiftUI */ = {
 			isa = PBXGroup;
 			children = (
@@ -91,6 +120,7 @@
 				226E9CBC2D25388F007EFE4D /* BlurUIKit.podspec */,
 				226E9CBE2D253B16007EFE4D /* Package.swift */,
 				229642C32C1E8768003C04C5 /* Products */,
+				01D9D8F5A02929BD3F8C4757 /* Tests */,
 			);
 			sourceTree = "<group>";
 		};
@@ -98,6 +128,7 @@
 			isa = PBXGroup;
 			children = (
 				229642C22C1E8768003C04C5 /* BlurUIKitExample.app */,
+				FBF59FC9E6DA179E742F3F8E /* BlurUIKitRenderingTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -140,6 +171,15 @@
 			path = Internal;
 			sourceTree = "<group>";
 		};
+		37DC5D9C21EE052AE6C17FCB /* ReflectionRenderingTests */ = {
+			isa = PBXGroup;
+			children = (
+				6825ED84067EA37689977422 /* ReflectionRenderingTests.swift */,
+			);
+			name = ReflectionRenderingTests;
+			path = ReflectionRenderingTests;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -160,6 +200,24 @@
 			productReference = 229642C22C1E8768003C04C5 /* BlurUIKitExample.app */;
 			productType = "com.apple.product-type.application";
 		};
+		9ABBE8BA7EC0C88D32CB4319 /* BlurUIKitRenderingTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 08691C19EDA7546273B7EB07 /* Build configuration list for PBXNativeTarget "BlurUIKitRenderingTests" */;
+			buildPhases = (
+				B8115754F87A3FDB0925998F /* Sources */,
+				F6A54EF8A66D021AE593730B /* Frameworks */,
+				5800B3F186E1CDA5AAC73327 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				9F12260F7FED101E888D70E8 /* PBXTargetDependency */,
+			);
+			name = BlurUIKitRenderingTests;
+			productName = BlurUIKitRenderingTests;
+			productReference = FBF59FC9E6DA179E742F3F8E /* BlurUIKitRenderingTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -172,6 +230,10 @@
 				TargetAttributes = {
 					229642C12C1E8768003C04C5 = {
 						CreatedOnToolsVersion = 15.4;
+					};
+					9ABBE8BA7EC0C88D32CB4319 = {
+						CreatedOnToolsVersion = 27.1;
+						TestTargetID = 229642C12C1E8768003C04C5;
 					};
 				};
 			};
@@ -189,6 +251,7 @@
 			projectRoot = "";
 			targets = (
 				229642C12C1E8768003C04C5 /* BlurUIKitExample */,
+				9ABBE8BA7EC0C88D32CB4319 /* BlurUIKitRenderingTests */,
 			);
 		};
 /* End PBXProject section */
@@ -200,6 +263,13 @@
 			files = (
 				229642CF2C1E8769003C04C5 /* Assets.xcassets in Resources */,
 				229642D22C1E8769003C04C5 /* Base in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5800B3F186E1CDA5AAC73327 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -228,7 +298,24 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		B8115754F87A3FDB0925998F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AAEFC312426D417B1B99A904 /* ReflectionRenderingTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		9F12260F7FED101E888D70E8 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = BlurUIKitExample;
+			target = 229642C12C1E8768003C04C5 /* BlurUIKitExample */;
+			targetProxy = F54DE80F85DF7904D79081AB /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
 		229642D02C1E8769003C04C5 /* LaunchScreen.storyboard */ = {
@@ -419,9 +506,61 @@
 			};
 			name = Release;
 		};
+		688B12A9CBAD91A9FE78EF65 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = "$(RECOMMENDED_IPHONEOS_DEPLOYMENT_TARGET)";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = dev.tim.BlurUIKit.RenderingTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/BlurUIKitExample.app/BlurUIKitExample";
+			};
+			name = Debug;
+		};
+		8426F21DC6FD700144EF5202 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = "$(RECOMMENDED_IPHONEOS_DEPLOYMENT_TARGET)";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = dev.tim.BlurUIKit.RenderingTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/BlurUIKitExample.app/BlurUIKitExample";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		08691C19EDA7546273B7EB07 /* Build configuration list for PBXNativeTarget "BlurUIKitRenderingTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8426F21DC6FD700144EF5202 /* Release */,
+				688B12A9CBAD91A9FE78EF65 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		229642BD2C1E8768003C04C5 /* Build configuration list for PBXProject "BlurUIKit" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

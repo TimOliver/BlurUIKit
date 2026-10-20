@@ -30,13 +30,23 @@ jobs:
           echo "Using simulator $UDID"
           echo "SIMULATOR_UDID=$UDID" >> "$GITHUB_ENV"
 
-      - name: Build example app
+      - name: Test reflection rendering in example app
         run: |
-          xcodebuild build \
+          xcodebuild test \
             -project BlurUIKit.xcodeproj \
             -scheme BlurUIKitExample \
             -destination "id=$SIMULATOR_UDID" \
+            -resultBundlePath ReflectionRenderingTests.xcresult \
+            -parallel-testing-enabled NO \
             CODE_SIGNING_ALLOWED=NO
+
+      - name: Upload rendering failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reflection-rendering-results
+          path: ReflectionRenderingTests.xcresult
+          if-no-files-found: ignore
 
       # xcodebuild prefers the Xcode project over Package.swift when both are present,
       # so remove it from this checkout to test the package (and its test target) directly.
