@@ -119,6 +119,7 @@ public class ReflectionBlurView: UIView {
         blurView.maximumBlurRadius = 40
         blurView.dimmingClearExtension = nil
         blurView.clipsBlurToBounds = true
+        blurView.replacesBlurWhenReducingTransparency = false
         return blurView
     }()
 

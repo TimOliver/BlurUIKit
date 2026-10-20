@@ -162,6 +162,10 @@ final class VariableBlurGradientTests: XCTestCase {
 
     @MainActor
     func testMinimumRadiusDoesNotAffectDimmingInAnyDirection() throws {
+        // Reduce Transparency forces full dimming, so pin it off to check the configured alpha
+        VariableBlurView.isReduceTransparencyEnabled = { false }
+        defer { VariableBlurView.isReduceTransparencyEnabled = { UIAccessibility.isReduceTransparencyEnabled } }
+
         for direction in [VariableBlurView.Direction.down, .up, .left, .right] {
             try withBlur { blur in
                 blur.direction = direction

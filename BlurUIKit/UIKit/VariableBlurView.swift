@@ -26,6 +26,9 @@ import UIKit
 /// in blur intensity from one edge to the other.
 /// This is great for separating separate layers of content (such as the iOS status bar)
 /// without any hard border lines.
+///
+/// When the system Reduce Transparency setting is on, the blur is removed and only the
+/// dimming gradient is shown, at full opacity. Set `dimmingTintColor` to nil to show nothing.
 public class VariableBlurView: UIView {
 
     /// The possible directions that the gradient of this blur view may flow in.
@@ -94,7 +97,9 @@ public class VariableBlurView: UIView {
         }
     }
 
-    /// The alpha value of the colored gradient
+    /// The alpha value of the colored gradient.
+    /// While Reduce Transparency is on, the blur is removed and the gradient is shown
+    /// at full opacity in its place. Nil hides the gradient in both cases.
     public var dimmingAlpha: DimmingAlpha? = .interfaceStyle(lightModeAlpha: 0.5,
                                                              darkModeAlpha: 0.25) {
         didSet {
@@ -121,6 +126,15 @@ public class VariableBlurView: UIView {
         didSet {
             guard dimmingClearExtension != oldValue else { return }
             resetDimmingImage()
+        }
+    }
+
+    /// Whether the blur is swapped for full-strength dimming while Reduce Transparency is on.
+    /// Reflections turn this off, since without their blur they'd become a sharp mirror image.
+    internal var replacesBlurWhenReducingTransparency = true {
+        didSet {
+            guard replacesBlurWhenReducingTransparency != oldValue else { return }
+            setNeedsLayout()
         }
     }
 
@@ -158,6 +172,9 @@ public class VariableBlurView: UIView {
     private weak var backdropView: UIView?
     private weak var overlayView: UIView?
 
+    /// Reports whether the system Reduce Transparency setting is on. Replaceable in tests.
+    internal static var isReduceTransparencyEnabled: () -> Bool = { UIAccessibility.isReduceTransparencyEnabled }
+
     // MARK: - Initialization
 
     public override init(frame: CGRect) {
@@ -185,6 +202,12 @@ public class VariableBlurView: UIView {
                 self.setNeedsLayout()
             }
         }
+
+        // Swap between the blur and its accessible fallback as the setting changes
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(reduceTransparencyStatusDidChange),
+                                               name: UIAccessibility.reduceTransparencyStatusDidChangeNotification,
+                                               object: nil)
     }
 
     // MARK: - View Lifecycle
@@ -204,6 +227,11 @@ public class VariableBlurView: UIView {
         blurEffectView.frame = bounds
         dimmingView?.frame = dimmingViewFrame()
 
+        // With Reduce Transparency on, the system stops rendering backdrops and the blur
+        // turns into a hard-edged opaque block. Hide it, and let the dimming gradient alone
+        // provide the contrast instead.
+        blurEffectView.isHidden = replacesBlurWhenReducingTransparency && Self.isReduceTransparencyEnabled()
+
         updateDimmingViewAlpha()
         configureView()
 
@@ -219,6 +247,10 @@ public class VariableBlurView: UIView {
         if #unavailable(iOS 17) {
             setNeedsLayout()
         }
+    }
+
+    @objc private func reduceTransparencyStatusDidChange() {
+        setNeedsLayout()
     }
 
     // MARK: - Private
@@ -279,6 +311,12 @@ public class VariableBlurView: UIView {
     private func updateDimmingViewAlpha() {
         guard let dimmingAlpha else {
             dimmingView?.alpha = 0.0
+            return
+        }
+
+        // Without the blur, full-strength dimming is what keeps content above it legible
+        if blurEffectView.isHidden {
+            dimmingView?.alpha = 1.0
             return
         }
 
