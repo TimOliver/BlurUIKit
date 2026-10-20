@@ -147,6 +147,12 @@ final class BlurAnimationTests: XCTestCase {
         XCTAssertEqual(easeIn[3], 1 - easeOut[1], accuracy: 0.001)
     }
 
+    func testTimingIsSendable() {
+        requireSendable(BlurAnimationTiming.self)
+    }
+
+    private func requireSendable<T: Sendable>(_: T.Type) {}
+
     /// The two user-defined control points of a cubic timing function, as x1, y1, x2, y2.
     private func controlPoints(of timing: CAMediaTimingFunction) -> [Float] {
         (1...2).flatMap { index -> [Float] in

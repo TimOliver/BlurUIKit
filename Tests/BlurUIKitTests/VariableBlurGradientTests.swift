@@ -232,6 +232,22 @@ final class VariableBlurGradientTests: XCTestCase {
         }
     }
 
+    @MainActor
+    func testBlurRadiiStillAcceptDoubleValues() {
+        // The radii were Double before becoming CGFloat. Existing code passing Double
+        // values must keep compiling, which Swift's implicit Double-CGFloat conversion allows.
+        let minimum: Double = 2
+        let maximum: Double = 12
+        let blur = VariableBlurView()
+        blur.minimumBlurRadius = minimum
+        blur.maximumBlurRadius = maximum
+        let reflection = ReflectionBlurView()
+        reflection.minimumBlurRadius = minimum
+        reflection.maximumBlurRadius = maximum
+        XCTAssertEqual(blur.maximumBlurRadius, 12)
+        XCTAssertEqual(reflection.minimumBlurRadius, 2)
+    }
+
     func testConfigurationTypesAreHashableAndSendable() {
         // Compile-time check. Swift 6 clients need these to be Sendable to store them in static
         // constants, though Sendable is only enforced when this target is built in Swift 6 mode.

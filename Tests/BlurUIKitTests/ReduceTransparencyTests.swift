@@ -1,5 +1,7 @@
 import XCTest
 import UIKit
+import SwiftUI
+import BlurSwiftUI
 @testable import BlurUIKit
 
 final class ReduceTransparencyTests: XCTestCase {
@@ -58,6 +60,47 @@ final class ReduceTransparencyTests: XCTestCase {
         XCTAssertFalse(try effectView(in: blur).isHidden)
     }
 
+    // MARK: - Opting Out
+
+    @MainActor
+    func testOptingOutKeepsTheBlurWhenReduceTransparencyIsOn() throws {
+        stubReduceTransparency { true }
+
+        try withBlur { blur in
+            blur.replacesBlurWhenReducingTransparency = false
+            blur.layoutIfNeeded()
+            XCTAssertFalse(try effectView(in: blur).isHidden)
+            XCTAssertEqual(try dimmingView(in: blur).alpha, 0.5)
+
+            blur.replacesBlurWhenReducingTransparency = true
+            blur.layoutIfNeeded()
+            XCTAssertTrue(try effectView(in: blur).isHidden)
+            XCTAssertEqual(try dimmingView(in: blur).alpha, 1.0)
+        }
+    }
+
+    @MainActor
+    func testSwiftUIModifierControlsTheReduceTransparencyFallback() async throws {
+        stubReduceTransparency { true }
+
+        let root = VariableBlur().replacesBlurWhenReducingTransparency(false)
+        let controller = UIHostingController(rootView: root)
+        let window = makePinnedWindow()
+        window.rootViewController = controller
+        defer { window.isHidden = true }
+        controller.view.layoutIfNeeded()
+        try await Task.sleep(nanoseconds: 100_000_000)
+
+        let blur = try XCTUnwrap(findBlur(in: controller.view))
+        XCTAssertFalse(blur.replacesBlurWhenReducingTransparency)
+        XCTAssertFalse(try effectView(in: blur).isHidden)
+
+        controller.rootView = VariableBlur()
+        try await Task.sleep(nanoseconds: 100_000_000)
+        XCTAssertTrue(blur.replacesBlurWhenReducingTransparency)
+        XCTAssertTrue(try effectView(in: blur).isHidden)
+    }
+
     // MARK: - Status Changes
 
     @MainActor
@@ -92,6 +135,12 @@ final class ReduceTransparencyTests: XCTestCase {
         window.addSubview(blur)
         blur.layoutIfNeeded()
         try withExtendedLifetime(window) { try body(blur) }
+    }
+
+    @MainActor
+    private func findBlur(in view: UIView) -> VariableBlurView? {
+        if let blur = view as? VariableBlurView { return blur }
+        return view.subviews.lazy.compactMap { self.findBlur(in: $0) }.first
     }
 
     @MainActor
