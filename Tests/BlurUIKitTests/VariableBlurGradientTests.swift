@@ -383,7 +383,7 @@ final class VariableBlurGradientTests: XCTestCase {
 
     @MainActor
     private func withBlur(_ body: (VariableBlurView) throws -> Void) rethrows {
-        let host = UIView()
+        let host = makePinnedWindow()
         let blur = VariableBlurView(frame: CGRect(x: 0, y: 0, width: 200, height: 200))
         blur.direction = .up
         host.addSubview(blur)

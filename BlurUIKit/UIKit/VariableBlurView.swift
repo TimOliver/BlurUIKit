@@ -29,6 +29,7 @@ import UIKit
 ///
 /// When the system Reduce Transparency setting is on, the blur is removed and only the
 /// dimming gradient is shown, at full opacity. Set `dimmingTintColor` to nil to show nothing.
+/// When Increase Contrast is on, the dimming gradient is made stronger.
 public class VariableBlurView: UIView {
 
     /// The possible directions that the gradient of this blur view may flow in.
@@ -99,7 +100,8 @@ public class VariableBlurView: UIView {
 
     /// The alpha value of the colored gradient.
     /// While Reduce Transparency is on, the blur is removed and the gradient is shown
-    /// at full opacity in its place. Nil hides the gradient in both cases.
+    /// at full opacity in its place. While Increase Contrast is on, the alpha is raised
+    /// halfway towards fully opaque (0.5 becomes 0.75). Nil hides the gradient in all cases.
     public var dimmingAlpha: DimmingAlpha? = .interfaceStyle(lightModeAlpha: 0.5,
                                                              darkModeAlpha: 0.25) {
         didSet {
@@ -198,7 +200,7 @@ public class VariableBlurView: UIView {
 
         // On iOS 17+, use the modern trait change registration
         if #available(iOS 17, *) {
-            registerForTraitChanges([UITraitUserInterfaceStyle.self]) { (self: VariableBlurView, _: UITraitCollection) in
+            registerForTraitChanges([UITraitUserInterfaceStyle.self, UITraitAccessibilityContrast.self]) { (self: VariableBlurView, _: UITraitCollection) in
                 self.setNeedsLayout()
             }
         }
@@ -227,9 +229,8 @@ public class VariableBlurView: UIView {
         blurEffectView.frame = bounds
         dimmingView?.frame = dimmingViewFrame()
 
-        // With Reduce Transparency on, the system stops rendering backdrops and the blur
-        // turns into a hard-edged opaque block. Hide it, and let the dimming gradient alone
-        // provide the contrast instead.
+        // Users turn on Reduce Transparency to get rid of blurs, so honor it by hiding
+        // the blur and letting the dimming gradient alone provide the contrast instead.
         blurEffectView.isHidden = replacesBlurWhenReducingTransparency && Self.isReduceTransparencyEnabled()
 
         updateDimmingViewAlpha()
@@ -320,14 +321,24 @@ public class VariableBlurView: UIView {
             return
         }
 
+        let alpha: CGFloat
         switch dimmingAlpha {
-        case .constant(alpha: let alpha):
-            dimmingView?.alpha = alpha
+        case .constant(alpha: let constantAlpha):
+            alpha = constantAlpha
         case .interfaceStyle(lightModeAlpha: let lightModeAlpha,
                              darkModeAlpha: let darkModeAlpha):
             let isDarkMode = traitCollection.userInterfaceStyle == .dark
-            dimmingView?.alpha = isDarkMode ? darkModeAlpha : lightModeAlpha
+            alpha = isDarkMode ? darkModeAlpha : lightModeAlpha
         }
+
+        // With Increase Contrast on, close half of the remaining gap to fully opaque
+        // so content above the blur stands out more against what's behind it.
+        guard traitCollection.accessibilityContrast == .high else {
+            dimmingView?.alpha = alpha
+            return
+        }
+        let clampedAlpha = min(max(alpha, 0.0), 1.0)
+        dimmingView?.alpha = clampedAlpha + (1.0 - clampedAlpha) * 0.5
     }
 
     // Extend only the clear edge of the dimming view.

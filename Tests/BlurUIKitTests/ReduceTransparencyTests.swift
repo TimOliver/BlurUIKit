@@ -83,13 +83,12 @@ final class ReduceTransparencyTests: XCTestCase {
 
     @MainActor
     private func withBlur(_ body: (VariableBlurView) throws -> Void) rethrows {
-        let host = UIView(frame: CGRect(x: 0, y: 0, width: 300, height: 300))
+        let window = makePinnedWindow()
         let blur = VariableBlurView(frame: CGRect(x: 0, y: 0, width: 300, height: 100))
-        blur.overrideUserInterfaceStyle = .light
         blur.dimmingAlpha = .constant(alpha: 0.5)
-        host.addSubview(blur)
+        window.addSubview(blur)
         blur.layoutIfNeeded()
-        try withExtendedLifetime(host) { try body(blur) }
+        try withExtendedLifetime(window) { try body(blur) }
     }
 
     @MainActor
