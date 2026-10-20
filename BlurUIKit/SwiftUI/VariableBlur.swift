@@ -59,6 +59,7 @@ public struct VariableBlur: UIViewRepresentable {
     private var dimmingClearExtension: GradientSizing? = .relative(fraction: 0.25)
     private var dimmingFullColorInset: GradientSizing?
     private var passesTouchesThrough: Bool = true
+    private var replacesBlurWhenReducingTransparency: Bool = true
 
     /// Set by the deprecated `dimmingStartingInset(_:)` to apply its inset through the matching
     /// deprecated `VariableBlurView` property, which preserves the inset's original meaning.
@@ -189,6 +190,20 @@ public struct VariableBlur: UIViewRepresentable {
         return copy
     }
 
+    /// Controls whether the blur is swapped for full-strength dimming while the system
+    /// Reduce Transparency setting is on.
+    ///
+    /// Only turn this off when the blur is essential to the content, since people enable
+    /// Reduce Transparency specifically to remove effects like this one.
+    ///
+    /// - Parameter replacesBlur: Whether to replace the blur with dimming. Defaults to `true`.
+    /// - Returns: A modified `VariableBlur` with the updated Reduce Transparency behavior.
+    public func replacesBlurWhenReducingTransparency(_ replacesBlur: Bool) -> VariableBlur {
+        var copy = self
+        copy.replacesBlurWhenReducingTransparency = replacesBlur
+        return copy
+    }
+
     // MARK: - UIViewRepresentable
 
     /// Creates the underlying ``VariableBlurView`` and applies the current configuration.
@@ -219,6 +234,7 @@ public struct VariableBlur: UIViewRepresentable {
             view.dimmingFullColorInset = dimmingFullColorInset
         }
         view.isUserInteractionEnabled = !passesTouchesThrough
+        view.replacesBlurWhenReducingTransparency = replacesBlurWhenReducingTransparency
     }
 }
 
