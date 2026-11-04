@@ -28,7 +28,7 @@ extension UIView {
 
     /// Set the gaussian blur radius of this view, cancelling any running blur animation.
     /// If a replacement filter cannot be created, the current blur and animation are preserved.
-    public var blurRadius: CGFloat {
+    @objc public var blurRadius: CGFloat {
         get {
             guard let filter = blurFilter else { return 0.0 }
             return filter.value(forKey: "inputRadius") as? CGFloat ?? 0.0
@@ -106,6 +106,44 @@ extension UIView {
     }
 }
 
+// MARK: - Objective-C
+
+// Objective-C versions of `setBlurRadiusAnimated(radius:duration:delay:timing:)`, which Objective-C
+// can't call because of its default arguments and `BlurAnimationTiming` parameter. They're
+// obsoleted in Swift, so Swift code only ever sees the original method.
+extension UIView {
+
+    /// Apply a gaussian blur to this view with the default duration, delay and timing.
+    /// See `setBlurRadiusAnimated(radius:duration:delay:timing:)`.
+    @available(swift, obsoleted: 1, renamed: "setBlurRadiusAnimated(radius:)")
+    @objc(setBlurRadiusAnimated:)
+    public func objcSetBlurRadiusAnimated(_ radius: CGFloat) {
+        setBlurRadiusAnimated(radius: radius)
+    }
+
+    /// Apply a gaussian blur to this view over the given duration, with the default delay and timing.
+    /// See `setBlurRadiusAnimated(radius:duration:delay:timing:)`.
+    @available(swift, obsoleted: 1, renamed: "setBlurRadiusAnimated(radius:duration:)")
+    @objc(setBlurRadiusAnimated:duration:)
+    public func objcSetBlurRadiusAnimated(_ radius: CGFloat, duration: TimeInterval) {
+        setBlurRadiusAnimated(radius: radius, duration: duration)
+    }
+
+    /// Apply a gaussian blur to this view with an animation.
+    /// See `setBlurRadiusAnimated(radius:duration:delay:timing:)`.
+    /// - Parameter timingFunction: How the radius is paced. Nil uses the automatic timing, which
+    ///   eases out when clearing a blur and eases in when applying one.
+    @available(swift, obsoleted: 1, renamed: "setBlurRadiusAnimated(radius:duration:delay:timing:)")
+    @objc(setBlurRadiusAnimated:duration:delay:timingFunction:)
+    public func objcSetBlurRadiusAnimated(_ radius: CGFloat,
+                                          duration: TimeInterval,
+                                          delay: TimeInterval,
+                                          timingFunction: CAMediaTimingFunction?) {
+        let timing = timingFunction.map { BlurAnimationTiming.custom($0) } ?? .automatic
+        setBlurRadiusAnimated(radius: radius, duration: duration, delay: delay, timing: timing)
+    }
+}
+
 // MARK: - Animation Timing
 
 /// How an animated change of blur radius is paced over its duration.
@@ -169,7 +207,7 @@ extension CAMediaTimingFunction {
     /// The steepness is deliberate. Clearing a blur means passing quickly through the large
     /// radii, where nothing visible changes, and slowly through the last few points, where the
     /// detail returns. See `BlurAnimationTiming` for why a constant rate looks uneven.
-    public static var blurEaseOut: CAMediaTimingFunction {
+    @objc public static var blurEaseOut: CAMediaTimingFunction {
         CAMediaTimingFunction(controlPoints: 0.2, 0.9, 0.4, 1)
     }
 
@@ -179,7 +217,7 @@ extension CAMediaTimingFunction {
     /// way, so the curve must linger through the first few points, where every point of radius
     /// shows, and then race through the large radii, where nothing visible changes. Using the
     /// ease-out in this direction would look like an instant blur followed by nothing.
-    public static var blurEaseIn: CAMediaTimingFunction {
+    @objc public static var blurEaseIn: CAMediaTimingFunction {
         CAMediaTimingFunction(controlPoints: 0.6, 0, 0.8, 0.1)
     }
 }

@@ -45,7 +45,7 @@ extension UIVisualEffectView {
     /// while Reduce Transparency is on. Setting either this or `dimmingAlpha` adds a hidden,
     /// zero-sized helper view to `contentView`, which restores both values whenever UIKit resets
     /// its effect for an appearance change. Changing `effect` builds a new blur, so set them again.
-    public var blurEffectRadius: CGFloat {
+    @objc public var blurEffectRadius: CGFloat {
         get {
             backdropView?.layer.value(forKeyPath: blurEffectRadiusKeyPath) as? CGFloat ?? 0.0
         }
@@ -61,7 +61,7 @@ extension UIVisualEffectView {
     /// It animates when set inside a `UIView.animate` block, like any view's alpha, and is kept in
     /// place across appearance changes. Reads as 1 when the view has no tint to adjust; the system
     /// materials keep their tint in the blur's filters, which follow `blurEffectRadius` instead.
-    public var dimmingAlpha: CGFloat {
+    @objc public var dimmingAlpha: CGFloat {
         get { tintViews.first?.alpha ?? 1.0 }
         set {
             BlurEffectState.state(for: self).requestedDimmingAlpha = newValue

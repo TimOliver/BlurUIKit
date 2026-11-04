@@ -30,7 +30,7 @@ public class ReflectionBlurView: UIView {
 
     /// The container view that holds all of the view content that will be reflected.
     /// An empty one is created by default, but it can be replaced with an external view as well.
-    public var contentView: UIView {
+    @objc public var contentView: UIView {
         didSet {
             guard contentView !== oldValue else { return }
             oldValue.removeFromSuperview()
@@ -40,24 +40,24 @@ public class ReflectionBlurView: UIView {
 
     /// The opacity of the reflected content, from `0.0` to `1.0`.
     /// Values outside this range are clamped when applied.
-    public var reflectionAlpha: CGFloat = 0.5 {
+    @objc public var reflectionAlpha: CGFloat = 0.5 {
         didSet { updateReflectionAppearance() }
     }
 
     /// Hides the reflection while leaving the source content visible.
     /// When hidden, the additional replicator instance is disabled entirely.
-    public var isReflectionHidden = false {
+    @objc public var isReflectionHidden = false {
         didSet { updateReflectionAppearance() }
     }
 
     /// The maximum blur radius applied at the far edge of the reflection.
-    public var maximumBlurRadius: CGFloat {
+    @objc public var maximumBlurRadius: CGFloat {
         get { blurView.maximumBlurRadius }
         set { blurView.maximumBlurRadius = newValue }
     }
 
     /// The minimum blur radius applied where the reflection begins.
-    public var minimumBlurRadius: CGFloat {
+    @objc public var minimumBlurRadius: CGFloat {
         get { blurView.minimumBlurRadius }
         set { blurView.minimumBlurRadius = newValue }
     }
@@ -70,7 +70,7 @@ public class ReflectionBlurView: UIView {
     }
 
     /// An optional color gradient used to dim the reflection as it moves away from the source.
-    public var dimmingTintColor: UIColor? {
+    @objc public var dimmingTintColor: UIColor? {
         get { blurView.dimmingTintColor }
         set { blurView.dimmingTintColor = newValue }
     }
@@ -103,7 +103,7 @@ public class ReflectionBlurView: UIView {
     /// Call this while content is moving without changing the reflection view's geometry,
     /// such as from `scrollViewDidScroll(_:)`. Multiple calls made before the next layout
     /// pass are automatically coalesced.
-    public func setNeedsReflectionUpdate() {
+    @objc public func setNeedsReflectionUpdate() {
         blurView.setNeedsBlurFilterUpdate()
     }
 
@@ -135,7 +135,7 @@ public class ReflectionBlurView: UIView {
     /// The receiver's outer size is intentionally independent from the content view's size;
     /// set it with `frame`, constraints, or another normal UIKit layout mechanism.
     /// - Parameter contentView: The content view that will be placed in the top half.
-    public init(contentView: UIView) {
+    @objc public init(contentView: UIView) {
         self.contentView = contentView
         super.init(frame: .zero)
         commonInit()
@@ -243,5 +243,44 @@ public class ReflectionBlurView: UIView {
 
         // Hide the blur view if needed
         blurView.isHidden = isReflectionHidden
+    }
+}
+
+// MARK: - Objective-C
+
+// Objective-C versions of the API built on Swift enums with associated values, which Objective-C
+// can't represent. They're obsoleted in Swift, so Swift code only ever sees the enum-based API.
+extension ReflectionBlurView {
+
+    /// The Objective-C version of `blurMaximumRadiusInset`.
+    @available(swift, obsoleted: 1, renamed: "blurMaximumRadiusInset")
+    @objc(blurMaximumRadiusInset)
+    public var objcBlurMaximumRadiusInset: VariableBlurView.ObjCGradientSizing? {
+        get { blurMaximumRadiusInset.map { VariableBlurView.ObjCGradientSizing($0) } }
+        set { blurMaximumRadiusInset = newValue?.sizing }
+    }
+
+    /// The Objective-C version of `dimmingAlpha`.
+    @available(swift, obsoleted: 1, renamed: "dimmingAlpha")
+    @objc(dimmingAlpha)
+    public var objcDimmingAlpha: VariableBlurView.ObjCDimmingAlpha? {
+        get { dimmingAlpha.map { VariableBlurView.ObjCDimmingAlpha($0) } }
+        set { dimmingAlpha = newValue?.dimmingAlpha }
+    }
+
+    /// The Objective-C version of `dimmingFullColorInset`.
+    @available(swift, obsoleted: 1, renamed: "dimmingFullColorInset")
+    @objc(dimmingFullColorInset)
+    public var objcDimmingFullColorInset: VariableBlurView.ObjCGradientSizing? {
+        get { dimmingFullColorInset.map { VariableBlurView.ObjCGradientSizing($0) } }
+        set { dimmingFullColorInset = newValue?.sizing }
+    }
+
+    /// The Objective-C version of `dimmingClearExtension`.
+    @available(swift, obsoleted: 1, renamed: "dimmingClearExtension")
+    @objc(dimmingClearExtension)
+    public var objcDimmingClearExtension: VariableBlurView.ObjCGradientSizing? {
+        get { dimmingClearExtension.map { VariableBlurView.ObjCGradientSizing($0) } }
+        set { dimmingClearExtension = newValue?.sizing }
     }
 }
