@@ -32,6 +32,11 @@ let package = Package(
             // Rendering requires the example app's window scene and render server.
             exclude: ["ReflectionRenderingTests.swift", "VisualEffectRenderingTests.swift"]
         ),
+        .testTarget(
+            name: "BlurUIKitObjCTests",
+            dependencies: ["BlurUIKit"],
+            path: "Tests/BlurUIKitObjCTests"
+        ),
     ],
     swiftLanguageModes: [.v6]
 )

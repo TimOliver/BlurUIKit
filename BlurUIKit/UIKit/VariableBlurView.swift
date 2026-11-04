@@ -41,7 +41,8 @@ public class VariableBlurView: UIView {
     // MARK: - Public Properties
     
     /// The possible directions that the gradient of this blur view may flow in.
-    public enum Direction: Hashable, Sendable {
+    @objc(VariableBlurViewDirection)
+    public enum Direction: Int, Hashable, Sendable {
         case down   // Downwards. Useful for the iOS status bar
         case up     // Upwards. Useful for view controller toolbars
         case left   // Left. Useful for iPadOS sidebar
@@ -65,7 +66,7 @@ public class VariableBlurView: UIView {
     }
 
     /// The current direction of the gradient for this blur view
-    public var direction: Direction = .down {
+    @objc public var direction: Direction = .down {
         didSet {
             guard direction != oldValue else { return }
             reset()
@@ -73,7 +74,7 @@ public class VariableBlurView: UIView {
     }
 
     /// The minimum blur radius at the normally transparent end of the gradient.
-    public var minimumBlurRadius: CGFloat = 0.0 {
+    @objc public var minimumBlurRadius: CGFloat = 0.0 {
         didSet {
             guard minimumBlurRadius != oldValue else { return }
             resetBlurMask()
@@ -81,7 +82,7 @@ public class VariableBlurView: UIView {
     }
 
     /// The maximum blur radius of the blur view when its gradient is at full opacity.
-    public var maximumBlurRadius: CGFloat = 3.5 {
+    @objc public var maximumBlurRadius: CGFloat = 3.5 {
         didSet {
             guard maximumBlurRadius != oldValue else { return }
             resetBlurMask()
@@ -99,7 +100,7 @@ public class VariableBlurView: UIView {
     }
 
     /// An optional colored gradient to dim the underlying content for better contrast.
-    public var dimmingTintColor: UIColor? = .systemBackground {
+    @objc public var dimmingTintColor: UIColor? = .systemBackground {
         didSet {
             makeDimmingViewIfNeeded()
             dimmingView?.tintColor = dimmingTintColor
@@ -142,7 +143,7 @@ public class VariableBlurView: UIView {
     /// Whether the blur is swapped for full-strength dimming while Reduce Transparency is on.
     /// Defaults to true. Only turn this off when the blur is essential to the content, since
     /// people enable Reduce Transparency specifically to remove effects like this one.
-    public var replacesBlurWhenReducingTransparency = true {
+    @objc public var replacesBlurWhenReducingTransparency = true {
         didSet {
             guard replacesBlurWhenReducingTransparency != oldValue else { return }
             setNeedsLayout()
@@ -600,5 +601,136 @@ extension VariableBlurView {
     public var dimmingStartingInset: GradientSizing? {
         get { dimmingInset.value }
         set { dimmingInset = (newValue, true) }
+    }
+}
+
+// MARK: Objective-C
+
+// Objective-C versions of the API built on Swift enums with associated values, which Objective-C
+// can't represent. They're obsoleted in Swift, so Swift code only ever sees the enum-based API.
+extension VariableBlurView {
+
+    /// An Objective-C representation of `GradientSizing`.
+    @available(swift, obsoleted: 1, message: "Use VariableBlurView.GradientSizing")
+    @objc(VariableBlurViewGradientSizing)
+    public final class ObjCGradientSizing: NSObject {
+        let sizing: GradientSizing
+
+        init(_ sizing: GradientSizing) {
+            self.sizing = sizing
+        }
+
+        /// A distance in on-screen UI points.
+        @objc(absoluteWithPosition:)
+        public static func absolute(position: CGFloat) -> ObjCGradientSizing {
+            ObjCGradientSizing(.absolute(position: position))
+        }
+
+        /// A fraction of the view's size along the gradient direction. (0.0 = 0%, 1.5 = 150%)
+        @objc(relativeWithFraction:)
+        public static func relative(fraction: CGFloat) -> ObjCGradientSizing {
+            ObjCGradientSizing(.relative(fraction: fraction))
+        }
+
+        /// Whether `value` is a fraction of the view's size, rather than a distance in points.
+        @objc public var isRelative: Bool {
+            if case .relative = sizing { return true }
+            return false
+        }
+
+        /// The distance in points, or the fraction of the view's size when `isRelative` is set.
+        @objc public var value: CGFloat {
+            switch sizing {
+            case .absolute(let position): position
+            case .relative(let fraction): fraction
+            }
+        }
+
+        public override func isEqual(_ object: Any?) -> Bool {
+            (object as? ObjCGradientSizing)?.sizing == sizing
+        }
+
+        public override var hash: Int {
+            sizing.hashValue
+        }
+    }
+
+    /// An Objective-C representation of `DimmingAlpha`.
+    @available(swift, obsoleted: 1, message: "Use VariableBlurView.DimmingAlpha")
+    @objc(VariableBlurViewDimmingAlpha)
+    public final class ObjCDimmingAlpha: NSObject {
+        let dimmingAlpha: DimmingAlpha
+
+        init(_ dimmingAlpha: DimmingAlpha) {
+            self.dimmingAlpha = dimmingAlpha
+        }
+
+        /// A constant value shared between light and dark mode.
+        @objc(constantWithAlpha:)
+        public static func constant(alpha: CGFloat) -> ObjCDimmingAlpha {
+            ObjCDimmingAlpha(.constant(alpha: alpha))
+        }
+
+        /// Different values between light mode and dark mode.
+        @objc(interfaceStyleWithLightModeAlpha:darkModeAlpha:)
+        public static func interfaceStyle(lightModeAlpha: CGFloat, darkModeAlpha: CGFloat) -> ObjCDimmingAlpha {
+            ObjCDimmingAlpha(.interfaceStyle(lightModeAlpha: lightModeAlpha, darkModeAlpha: darkModeAlpha))
+        }
+
+        /// The alpha used in light mode. Matches `darkModeAlpha` for a constant value.
+        @objc public var lightModeAlpha: CGFloat {
+            switch dimmingAlpha {
+            case .constant(let alpha): alpha
+            case .interfaceStyle(let lightModeAlpha, _): lightModeAlpha
+            }
+        }
+
+        /// The alpha used in dark mode. Matches `lightModeAlpha` for a constant value.
+        @objc public var darkModeAlpha: CGFloat {
+            switch dimmingAlpha {
+            case .constant(let alpha): alpha
+            case .interfaceStyle(_, let darkModeAlpha): darkModeAlpha
+            }
+        }
+
+        public override func isEqual(_ object: Any?) -> Bool {
+            (object as? ObjCDimmingAlpha)?.dimmingAlpha == dimmingAlpha
+        }
+
+        public override var hash: Int {
+            dimmingAlpha.hashValue
+        }
+    }
+
+    /// The Objective-C version of `blurMaximumRadiusInset`.
+    @available(swift, obsoleted: 1, renamed: "blurMaximumRadiusInset")
+    @objc(blurMaximumRadiusInset)
+    public var objcBlurMaximumRadiusInset: ObjCGradientSizing? {
+        get { blurMaximumRadiusInset.map { ObjCGradientSizing($0) } }
+        set { blurMaximumRadiusInset = newValue?.sizing }
+    }
+
+    /// The Objective-C version of `dimmingAlpha`.
+    @available(swift, obsoleted: 1, renamed: "dimmingAlpha")
+    @objc(dimmingAlpha)
+    public var objcDimmingAlpha: ObjCDimmingAlpha? {
+        get { dimmingAlpha.map { ObjCDimmingAlpha($0) } }
+        set { dimmingAlpha = newValue?.dimmingAlpha }
+    }
+
+    /// The Objective-C version of `dimmingFullColorInset`.
+    @available(swift, obsoleted: 1, renamed: "dimmingFullColorInset")
+    @objc(dimmingFullColorInset)
+    public var objcDimmingFullColorInset: ObjCGradientSizing? {
+        get { dimmingFullColorInset.map { ObjCGradientSizing($0) } }
+        set { dimmingFullColorInset = newValue?.sizing }
+    }
+
+    /// The Objective-C version of `dimmingClearExtension`.
+    @available(swift, obsoleted: 1, renamed: "dimmingClearExtension")
+    @objc(dimmingClearExtension)
+    public var objcDimmingClearExtension: ObjCGradientSizing? {
+        get { dimmingClearExtension.map { ObjCGradientSizing($0) } }
+        set { dimmingClearExtension = newValue?.sizing }
     }
 }
